@@ -158,13 +158,34 @@ async def handle_hal_websocket(websocket: WebSocket):
                     setattr(websocket, "_cached_vision_desc", scene_desc)
                 continue
 
-            # Helper to execute conversation reasoning & voice synthesis
+            # Helper to execute conversation reasoning & pipelined voice synthesis
             async def run_conversation_flow(prompt_text: str, keys_dict: dict, voice_pref: str | None, vis_context: str | None):
                 nonlocal interrupted, current_task
                 try:
                     await websocket.send_json({"type": "status", "state": "thinking"})
                     
-                    full_text = ""
+                    # Queue for sentences ready to be synthesized and sent
+                    sentence_queue = asyncio.Queue()
+                    sentence_seq = 0
+
+                    # Worker: synthesizes and streams sentences in strict chronological sequence
+                    async def tts_worker():
+                        nonlocal interrupted
+                        while True:
+                            item = await sentence_queue.get()
+                            if item is None:
+                                sentence_queue.task_done()
+                                break
+                            s_id, s_text = item
+                            if not interrupted:
+                                await synthesize_and_send_sentence(
+                                    websocket, s_id, s_text, voice_pref
+                                )
+                            sentence_queue.task_done()
+
+                    worker_task = asyncio.create_task(tts_worker())
+
+                    buffer = ""
                     async for token in llm_streamer.stream_tokens(
                         prompt=prompt_text,
                         groq_key=keys_dict.get("groq"),
@@ -175,19 +196,28 @@ async def handle_hal_websocket(websocket: WebSocket):
                         if interrupted:
                             break
 
-                        full_text += token
                         await websocket.send_json({
                             "type": "llm_delta",
                             "delta": token
                         })
 
-                    clean_full_text = full_text.strip()
-                    if clean_full_text and not interrupted:
-                        # Synthesize complete coherent phrase in one unified audio stream
-                        # to eliminate choppy sentence-by-sentence gaps and pauses
-                        await synthesize_and_send_sentence(
-                            websocket, 1, clean_full_text, voice_pref
-                        )
+                        buffer += token
+                        complete_sentences, buffer = extract_complete_sentences(buffer)
+                        for sentence in complete_sentences:
+                            clean_s = sentence.strip()
+                            if clean_s:
+                                sentence_seq += 1
+                                await sentence_queue.put((sentence_seq, clean_s))
+
+                    # Flush any remaining buffer text as the final sentence
+                    remaining_text = buffer.strip()
+                    if remaining_text and not interrupted:
+                        sentence_seq += 1
+                        await sentence_queue.put((sentence_seq, remaining_text))
+
+                    # Signal worker to finish
+                    await sentence_queue.put(None)
+                    await worker_task
 
                     if not interrupted:
                         await websocket.send_json({"type": "stream_complete"})

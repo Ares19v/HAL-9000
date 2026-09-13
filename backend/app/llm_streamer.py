@@ -21,6 +21,15 @@ logger = logging.getLogger(__name__)
 class LLMStreamer:
     def __init__(self):
         self.conversation_history: List[Dict[str, str]] = []
+        self._client: Optional[httpx.AsyncClient] = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(12.0, connect=3.0),
+                limits=httpx.Limits(max_keepalive_connections=10, max_connections=20)
+            )
+        return self._client
 
     def reset_history(self):
         self.conversation_history = []
@@ -76,40 +85,41 @@ class LLMStreamer:
 
         # 2. Try Groq (Fastest LLM inference engine - Low latency streaming)
         if active_groq:
-            for model_id in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b", "openai/gpt-oss-20b"]:
+            client = self._get_client()
+            for model_id in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"]:
                 try:
                     headers = {
                         "Authorization": f"Bearer {active_groq}",
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        "User-Agent": "HAL-9000/1.0"
                     }
                     payload = {
                         "model": model_id,
                         "messages": [{"role": "system", "content": HAL_SYSTEM_PROMPT}] + history,
                         "stream": True,
-                        "temperature": 0.35,
-                        "max_tokens": 400
+                        "temperature": 0.3,
+                        "max_tokens": 150
                     }
-                    async with httpx.AsyncClient(timeout=15.0) as client:
-                        async with client.stream("POST", "https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload) as response:
-                            if response.status_code == 200:
-                                async for line in response.aiter_lines():
-                                    if line.startswith("data: "):
-                                        data_str = line[6:].strip()
-                                        if data_str == "[DONE]":
-                                            break
-                                        try:
-                                            chunk = json.loads(data_str)
-                                            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                                            if delta:
-                                                full_response += delta
-                                                yield delta
-                                        except Exception:
-                                            continue
-                                if full_response.strip():
-                                    self.conversation_history.append({"role": "assistant", "content": full_response})
-                                    return
-                            else:
-                                logger.warning(f"Groq API model {model_id} returned {response.status_code}")
+                    async with client.stream("POST", "https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload) as response:
+                        if response.status_code == 200:
+                            async for line in response.aiter_lines():
+                                if line.startswith("data: "):
+                                    data_str = line[6:].strip()
+                                    if data_str == "[DONE]":
+                                        break
+                                    try:
+                                        chunk = json.loads(data_str)
+                                        delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                                        if delta:
+                                            full_response += delta
+                                            yield delta
+                                    except Exception:
+                                        continue
+                            if full_response.strip():
+                                self.conversation_history.append({"role": "assistant", "content": full_response})
+                                return
+                        else:
+                            logger.warning(f"Groq API model {model_id} returned {response.status_code}")
                 except Exception as e:
                     logger.error(f"Groq streaming error with {model_id}: {e}")
 

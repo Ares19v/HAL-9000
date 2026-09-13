@@ -249,14 +249,19 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       gainNode.connect(analyserRef.current);
 
       const currentTime = ctx.currentTime;
-      const startTime = Math.max(currentTime, nextStartTimeRef.current);
+      // If previous sentence is currently playing or queued, apply a subtle 40ms crossfade overlap
+      // to eliminate unnatural dead-air gaps between sentences without clipping
+      const isChained = nextStartTimeRef.current > currentTime + 0.05;
+      const startTime = isChained 
+        ? Math.max(currentTime, nextStartTimeRef.current - 0.04) 
+        : Math.max(currentTime, nextStartTimeRef.current);
       const duration = audioBuffer.duration;
 
-      // Smooth anti-pop envelope (4ms micro fade-in and fade-out)
+      // Smooth anti-pop envelope (8ms micro fade-in and fade-out)
       gainNode.gain.setValueAtTime(0.001, startTime);
-      gainNode.gain.linearRampToValueAtTime(1.0, startTime + 0.004);
-      if (duration > 0.008) {
-        gainNode.gain.setValueAtTime(1.0, startTime + duration - 0.004);
+      gainNode.gain.linearRampToValueAtTime(1.0, startTime + 0.008);
+      if (duration > 0.016) {
+        gainNode.gain.setValueAtTime(1.0, startTime + duration - 0.008);
         gainNode.gain.linearRampToValueAtTime(0.001, startTime + duration);
       }
 

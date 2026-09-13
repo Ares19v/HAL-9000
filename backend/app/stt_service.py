@@ -17,6 +17,15 @@ class STTService:
     def __init__(self):
         self.endpoint = "https://api.groq.com/openai/v1/audio/transcriptions"
         self.model = "whisper-large-v3-turbo"
+        self._client: Optional[httpx.AsyncClient] = None
+
+    def _get_client(self) -> httpx.AsyncClient:
+        if self._client is None or self._client.is_closed:
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(8.0, connect=3.0),
+                limits=httpx.Limits(max_keepalive_connections=10, max_connections=20)
+            )
+        return self._client
 
     async def transcribe_audio(
         self,
@@ -55,22 +64,22 @@ class STTService:
 
         t0 = time.time()
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                response = await client.post(
-                    self.endpoint,
-                    headers=headers,
-                    data=data,
-                    files=files
-                )
-                if response.status_code == 200:
-                    result = response.json()
-                    raw_text = result.get("text", "").strip()
-                    elapsed = (time.time() - t0) * 1000
-                    logger.info(f"[Groq Whisper] Transcribed in {elapsed:.1f}ms: '{raw_text}'")
-                    return raw_text
-                else:
-                    logger.error(f"[Groq Whisper] HTTP {response.status_code}: {response.text}")
-                    return ""
+            client = self._get_client()
+            response = await client.post(
+                self.endpoint,
+                headers=headers,
+                data=data,
+                files=files
+            )
+            if response.status_code == 200:
+                result = response.json()
+                raw_text = result.get("text", "").strip()
+                elapsed = (time.time() - t0) * 1000
+                logger.info(f"[Groq Whisper] Transcribed in {elapsed:.1f}ms: '{raw_text}'")
+                return raw_text
+            else:
+                logger.error(f"[Groq Whisper] HTTP {response.status_code}: {response.text}")
+                return ""
         except Exception as e:
             logger.error(f"[Groq Whisper] Exception: {e}")
             return ""
