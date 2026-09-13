@@ -36,10 +36,10 @@ export const HalEye: React.FC<HalEyeProps> = ({
       const deltaX = (e.clientX - centerX) / (window.innerWidth / 2);
       const deltaY = (e.clientY - centerY) / (window.innerHeight / 2);
       
-      // Target gaze with 7px max parallax drift
+      // Target gaze with 8px max parallax drift
       targetGazeRef.current = {
-        x: Math.max(-7.5, Math.min(7.5, deltaX * 7.5)),
-        y: Math.max(-7.5, Math.min(7.5, deltaY * 7.5))
+        x: Math.max(-8, Math.min(8, deltaX * 8)),
+        y: Math.max(-8, Math.min(8, deltaY * 8))
       };
     };
 
@@ -76,43 +76,45 @@ export const HalEye: React.FC<HalEyeProps> = ({
 
   // Dynamic scale calculation with smooth dampening
   const pulseScale = isSpeaking 
-    ? 1.0 + (smoothLevel * 0.48) 
+    ? 1.0 + (smoothLevel * 0.5) 
     : isThinking 
       ? 1.04 + Math.sin(Date.now() * 0.006) * 0.02
-      : 1.0 + Math.sin(Date.now() * 0.002) * 0.015; // Subtle organic idle breathing
+      : 1.0 + Math.sin(Date.now() * 0.002) * 0.015;
 
   const coreLuminance = isSpeaking 
-    ? 0.75 + (smoothLevel * 0.25) 
+    ? 0.78 + (smoothLevel * 0.22) 
     : isThinking 
       ? 0.72 
-      : 0.65;
+      : 0.64;
 
   return (
     <div 
       ref={containerRef}
       className="relative flex items-center justify-center select-none"
-      style={{ width: '280px', height: '280px' }}
+      style={{ width: '290px', height: '290px' }}
     >
-      {/* Outer Machined Aluminum Bezel Ring */}
-      <div className="absolute inset-0 rounded-full aluminum-bezel p-[14px] shadow-2xl">
-        {/* Knurled Outer Collar Ring */}
-        <div className="w-full h-full rounded-full knurled-ring p-[4px] shadow-inner flex items-center justify-center">
-          {/* Inner Black Anodized Lens Housing */}
-          <div className="w-full h-full rounded-full bg-[#07080a] p-[10px] shadow-inner relative overflow-hidden flex items-center justify-center border border-[#2b2d35]">
+      {/* Outer Machined Aluminum Bezel Ring with Edge Highlights */}
+      <div className="absolute inset-0 rounded-full aluminum-bezel p-[13px] shadow-[0_20px_50px_rgba(0,0,0,0.98)]">
+        
+        {/* Precision Knurled Retaining Collar */}
+        <div className="w-full h-full rounded-full knurled-ring p-[4.5px] shadow-inner flex items-center justify-center">
+          
+          {/* Inner Stepped Dark Anodized Lens Housing */}
+          <div className="w-full h-full rounded-full bg-[#050608] p-[9px] shadow-inner relative overflow-hidden flex items-center justify-center border border-[#2b2d35]">
             
-            {/* Deep Fisheye Optical Cavity */}
+            {/* Deep Fisheye Optical Cavity with Radial Depth */}
             <div 
               className="relative w-full h-full rounded-full flex items-center justify-center overflow-hidden"
               style={{
-                background: 'radial-gradient(circle at 50% 50%, #170101 0%, #080000 65%, #000000 100%)',
-                boxShadow: 'inset 0 0 50px rgba(0, 0, 0, 0.98), inset 0 0 18px rgba(255, 0, 0, 0.25)'
+                background: 'radial-gradient(circle at 50% 50%, #1a0101 0%, #0a0000 65%, #000000 100%)',
+                boxShadow: 'inset 0 0 55px rgba(0, 0, 0, 0.98), inset 0 0 20px rgba(255, 0, 0, 0.3)'
               }}
             >
               {/* Stepped Optical Aperture Grooves */}
               <div className="absolute inset-2 rounded-full border border-red-950/40 pointer-events-none" />
-              <div className="absolute inset-5 rounded-full border border-red-900/25 pointer-events-none" />
-              <div className="absolute inset-8 rounded-full border border-red-800/20 pointer-events-none" />
-              <div className="absolute inset-11 rounded-full border border-red-700/15 pointer-events-none" />
+              <div className="absolute inset-5 rounded-full border border-red-900/30 pointer-events-none" />
+              <div className="absolute inset-8 rounded-full border border-red-800/22 pointer-events-none" />
+              <div className="absolute inset-11 rounded-full border border-red-700/16 pointer-events-none" />
 
               {/* HAL Glowing Eye Assembly with Fluid LERP Parallax */}
               <div 
@@ -125,77 +127,87 @@ export const HalEye: React.FC<HalEyeProps> = ({
                 <div 
                   className={`absolute rounded-full transition-shadow duration-75 ${isSpeaking ? 'hal-speaking-glow' : 'hal-eye-glow'}`}
                   style={{
-                    width: '135px',
-                    height: '135px',
-                    background: 'radial-gradient(circle, rgba(235, 10, 10, 0.85) 0%, rgba(180, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 70%)',
+                    width: '140px',
+                    height: '140px',
+                    background: 'radial-gradient(circle, rgba(240, 10, 10, 0.88) 0%, rgba(185, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0) 70%)',
                     transform: `scale(${pulseScale})`,
                     opacity: coreLuminance
                   }}
                 />
 
-                {/* Concentric Secondary Iris Ring */}
+                {/* Primary Concentric Iris Ring */}
                 <div 
-                  className="absolute w-[82px] h-[82px] rounded-full border border-red-500/50"
+                  className="absolute w-[86px] h-[86px] rounded-full border border-red-500/50"
                   style={{
                     transform: `scale(${pulseScale * 0.94})`,
-                    boxShadow: '0 0 22px rgba(255, 40, 40, 0.65)'
+                    boxShadow: '0 0 24px rgba(255, 40, 40, 0.7)'
                   }}
                 />
 
-                {/* Third Intermediate Ring */}
+                {/* Secondary Intermediate Ring */}
                 <div 
-                  className="absolute w-[66px] h-[66px] rounded-full border border-red-400/30"
+                  className="absolute w-[70px] h-[70px] rounded-full border border-red-400/35"
                   style={{
-                    transform: `scale(${pulseScale * 0.97})`
+                    transform: `scale(${pulseScale * 0.97})`,
+                    boxShadow: '0 0 12px rgba(255, 20, 20, 0.4)'
                   }}
                 />
 
-                {/* Intense Red Pupil with Multi-Stage Radial Glow */}
+                {/* Inner Fine Ring */}
+                <div 
+                  className="absolute w-[60px] h-[60px] rounded-full border border-red-300/25"
+                  style={{
+                    transform: `scale(${pulseScale * 0.98})`
+                  }}
+                />
+
+                {/* Intense Red-Orange Pupil Core with Multi-Stage Radial Glow */}
                 <div 
                   className="relative rounded-full flex items-center justify-center will-change-transform"
                   style={{
-                    width: '56px',
-                    height: '56px',
-                    background: 'radial-gradient(circle at 48% 48%, #ff3b30 0%, #d70000 45%, #7a0000 85%, #300000 100%)',
+                    width: '58px',
+                    height: '58px',
+                    background: 'radial-gradient(circle at 48% 48%, #ff3e30 0%, #dc0000 45%, #7a0000 85%, #2a0000 100%)',
                     boxShadow: `
-                      0 0 ${16 + smoothLevel * 28}px rgba(255, 45, 0, 0.95),
-                      inset 0 0 14px rgba(255, 210, 0, 0.45)
+                      0 0 ${18 + smoothLevel * 30}px rgba(255, 50, 0, 0.95),
+                      inset 0 0 15px rgba(255, 215, 0, 0.5)
                     `,
                     transform: `scale(${pulseScale})`
                   }}
                 >
                   {/* Glowing Incandescent Yellow Core */}
                   <div 
-                    className="w-[25px] h-[25px] rounded-full flex items-center justify-center"
+                    className="w-[26px] h-[26px] rounded-full flex items-center justify-center"
                     style={{
-                      background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #ffea6b 40%, #ff5e00 85%, transparent 100%)',
-                      boxShadow: '0 0 12px rgba(255, 255, 210, 0.95)',
-                      opacity: isSpeaking ? 0.95 + (smoothLevel * 0.05) : 0.88
+                      background: 'radial-gradient(circle at 50% 50%, #ffffff 0%, #ffea6b 38%, #ff5e00 82%, transparent 100%)',
+                      boxShadow: '0 0 14px rgba(255, 255, 210, 0.98)',
+                      opacity: isSpeaking ? 0.96 + (smoothLevel * 0.04) : 0.88
                     }}
                   >
                     {/* Pinpoint White Specular Center (The "Soul" of HAL) */}
-                    <div className="w-[5.5px] h-[5.5px] rounded-full bg-white shadow-[0_0_9px_#ffffff]" />
+                    <div className="w-[6px] h-[6px] rounded-full bg-white shadow-[0_0_10px_#ffffff]" />
                   </div>
                 </div>
               </div>
 
-              {/* Kubrick Fisheye Lens Specular Glare (Overhead Studio Softbox Light Bar) */}
+              {/* Surface Convex Glass Specular Glare (Parallax opposite to gaze) */}
               <div 
-                className="absolute inset-0 rounded-full pointer-events-none"
+                className="absolute inset-0 rounded-full pointer-events-none transition-transform duration-100 ease-out"
                 style={{
-                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.06) 32%, transparent 58%)',
+                  transform: `translate3d(${-gaze.x * 0.4}px, ${-gaze.y * 0.4}px, 0)`,
+                  background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.07) 32%, transparent 58%)',
                   mixBlendMode: 'screen'
                 }}
               />
 
-              {/* Curved Glass Highlight Arc on Top Left */}
+              {/* Overhead Softbox Studio Reflection Arc on Top Left */}
               <div 
-                className="absolute top-4 left-6 w-24 h-12 rounded-[50%] border-t-[3px] border-l-[2px] border-white/40 rotate-[-25deg] pointer-events-none blur-[0.6px]"
+                className="absolute top-4 left-6 w-26 h-13 rounded-[50%] border-t-[3px] border-l-[2px] border-white/45 rotate-[-26deg] pointer-events-none blur-[0.6px]"
               />
 
               {/* Secondary Lower Rim Glass Caustic Highlight */}
               <div 
-                className="absolute bottom-5 right-7 w-16 h-8 rounded-[50%] border-b-[2px] border-r-[1.5px] border-red-400/25 rotate-[-15deg] pointer-events-none blur-[0.4px]"
+                className="absolute bottom-5 right-7 w-18 h-9 rounded-[50%] border-b-[2px] border-r-[1.5px] border-red-400/30 rotate-[-15deg] pointer-events-none blur-[0.4px]"
               />
             </div>
           </div>
