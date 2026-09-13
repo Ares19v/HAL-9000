@@ -38,28 +38,46 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       analyser.fftSize = 128;
       analyser.smoothingTimeConstant = 0.75;
 
-      // Douglas Rain Studio Vocal DSP Chain: High-intelligibility broadcast booth
-      // Subtle warmth at 220Hz, gentle dip in harsh upper-mids (4.5kHz)
+      // Douglas Rain / Discovery One Studio Intercom DSP Mastering Chain
+      // 1. Highpass at 110Hz to eliminate artificial digital sub-rumble
+      const highPass = ctx.createBiquadFilter();
+      highPass.type = 'highpass';
+      highPass.frequency.value = 110;
+      highPass.Q.value = 0.7;
+
+      // 2. Warm chest resonance bump at 280Hz
       const lowWarmth = ctx.createBiquadFilter();
       lowWarmth.type = 'peaking';
-      lowWarmth.frequency.value = 240;
-      lowWarmth.gain.value = 2.0; // Chest resonance
-      lowWarmth.Q.value = 0.7;
+      lowWarmth.frequency.value = 280;
+      lowWarmth.gain.value = 2.5;
+      lowWarmth.Q.value = 0.8;
 
-      const highSmooth = ctx.createBiquadFilter();
-      highSmooth.type = 'lowpass';
-      highSmooth.frequency.value = 8500; // Soft cinema roll-off (removes robot sibilance)
+      // 3. Gentle dip at 3800Hz to eliminate harsh modern sibilance
+      const sibilanceTamer = ctx.createBiquadFilter();
+      sibilanceTamer.type = 'peaking';
+      sibilanceTamer.frequency.value = 3800;
+      sibilanceTamer.gain.value = -2.5;
+      sibilanceTamer.Q.value = 1.0;
 
+      // 4. Authentic 1968 cinema 35mm optical soundtrack roll-off at 6000Hz
+      const cinemaRollOff = ctx.createBiquadFilter();
+      cinemaRollOff.type = 'lowpass';
+      cinemaRollOff.frequency.value = 6000;
+      cinemaRollOff.Q.value = 0.7;
+
+      // 5. Studio optical leveling amplifier (LA-2A style flat dynamics)
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
-      comp.knee.value = 8;
-      comp.ratio.value = 2.5;
-      comp.attack.value = 0.005;
-      comp.release.value = 0.06;
+      comp.threshold.value = -18;
+      comp.knee.value = 6;
+      comp.ratio.value = 3.5;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.08;
 
-      analyser.connect(lowWarmth);
-      lowWarmth.connect(highSmooth);
-      highSmooth.connect(comp);
+      analyser.connect(highPass);
+      highPass.connect(lowWarmth);
+      lowWarmth.connect(sibilanceTamer);
+      sibilanceTamer.connect(cinemaRollOff);
+      cinemaRollOff.connect(comp);
       comp.connect(ctx.destination);
 
       analyserRef.current = analyser;

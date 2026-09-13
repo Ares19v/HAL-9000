@@ -162,8 +162,8 @@ class TTSService:
                         chosen_voice = settings.KOKORO_VOICE
                         lang = "en-us"
 
-                    # 0.98x speed flows naturally without dragging or robotic slowness
-                    speed = 0.98 if chosen_voice is hal_vector or voice_override in ["bm_george", "hal9000"] else settings.KOKORO_SPEED
+                    # 0.94x speed flows with measured, peaceful, calculating Douglas Rain cadence
+                    speed = 0.94 if chosen_voice is hal_vector or voice_override in ["bm_george", "hal9000", "bm_daniel"] else settings.KOKORO_SPEED
 
                     loop = asyncio.get_running_loop()
                     samples, sample_rate = await loop.run_in_executor(
