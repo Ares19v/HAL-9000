@@ -28,7 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       return;
     }
     setTesting(true);
-    setTestStatus("Testing key with LLaMA 3.3 70B...");
+    setTestStatus("Testing key with Groq LPU...");
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
@@ -37,13 +37,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "qwen/qwen3.8-27b",
           messages: [{ role: "user", content: "ping" }],
           max_tokens: 5
         })
       });
       if (res.ok) {
-        setTestStatus("SUCCESS: Connected to LLaMA 3.3 70B (300 t/s)!");
+        setTestStatus("SUCCESS: Connected to Groq LPU (300+ t/s)!");
       } else {
         const err = await res.json().catch(() => ({}));
         setTestStatus(`ERROR: ${err.error?.message || "Invalid API key"}`);
