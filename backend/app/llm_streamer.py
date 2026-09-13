@@ -34,7 +34,7 @@ class LLMStreamer:
     def reset_history(self):
         self.conversation_history = []
 
-    async def stream_tokens(
+    async def _stream_raw_tokens(
         self,
         prompt: str,
         groq_key: Optional[str] = None,
@@ -43,8 +43,7 @@ class LLMStreamer:
         visual_context: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """
-        Stream LLM response tokens.
-        Checks for iconic Easter eggs first for instant zero-latency playback.
+        Stream LLM response tokens from available providers (Groq, OpenAI, Gemini, Ollama, Procedural).
         """
         # Fix common acoustic speech recognition mishearings in prompt
         clean_prompt = prompt.strip()
@@ -76,9 +75,7 @@ class LLMStreamer:
         active_openai = openai_key or settings.OPENAI_API_KEY
         active_gemini = gemini_key or settings.GEMINI_API_KEY
 
-        # Append user message (with visual observation if available)
         self.conversation_history.append({"role": "user", "content": augmented_prompt})
-        # Keep last 10 messages for rich conversational context
         history = self.conversation_history[-10:]
 
         full_response = ""
@@ -232,5 +229,75 @@ class LLMStreamer:
             yield word + (" " if i < len(words) - 1 else "")
             await asyncio.sleep(0.015)
         self.conversation_history.append({"role": "assistant", "content": fallback_text})
+
+    async def stream_tokens(
+        self,
+        prompt: str,
+        groq_key: Optional[str] = None,
+        openai_key: Optional[str] = None,
+        gemini_key: Optional[str] = None,
+        visual_context: Optional[str] = None
+    ) -> AsyncGenerator[str, None]:
+        """
+        Stream filtered LLM tokens. Programmatically strips repetitive 'Good day' / 'Good morning'
+        prefixes unless the user explicitly initiated a greeting.
+        """
+        clean_prompt = prompt.strip()
+        user_greeted = bool(re.search(r'\b(hello|hi|hey|greetings|good\s*(morning|afternoon|evening|day))\b', clean_prompt, re.IGNORECASE))
+
+        raw_stream = self._stream_raw_tokens(
+            prompt=prompt,
+            groq_key=groq_key,
+            openai_key=openai_key,
+            gemini_key=gemini_key,
+            visual_context=visual_context
+        )
+
+        if user_greeted:
+            async for tok in raw_stream:
+                yield tok
+            return
+
+        prefix_buf = ""
+        greeting_filtered = False
+
+        async for tok in raw_stream:
+            if not greeting_filtered:
+                prefix_buf += tok
+
+                # If prefix_buf ends in a comma or open greeting, wait for possible vocative name (e.g. 'Good day,')
+                if re.match(r'^\s*(good\s+(day|morning|afternoon|evening)|hello|greetings)[,\s]*$', prefix_buf, re.IGNORECASE):
+                    continue
+
+                # Check if buffer starts with a full greeting like 'Good day, Dev.' or 'Good day.'
+                m = re.match(r'^\s*(good\s+(day|morning|afternoon|evening)|hello|greetings)(?:[,\s]+(?:commander\s+)?dev)?[\.,;!?:]*\s*', prefix_buf, re.IGNORECASE)
+                if m:
+                    stripped = prefix_buf[m.end():].lstrip()
+                    if stripped:
+                        stripped = stripped[0].upper() + stripped[1:]
+                        yield stripped
+                    greeting_filtered = True
+                    prefix_buf = ""
+                    continue
+
+                # If enough tokens arrived without an opening greeting, flush buffer and pass through
+                if len(prefix_buf.split()) >= 4 or len(prefix_buf) >= 25:
+                    greeting_filtered = True
+                    yield prefix_buf
+                    prefix_buf = ""
+                    continue
+            else:
+                yield tok
+
+        # If stream finished before buffer flushed
+        if not greeting_filtered and prefix_buf:
+            m = re.match(r'^\s*(good\s+(day|morning|afternoon|evening)|hello|greetings)(?:[,\s]+(?:commander\s+)?dev)?[\.,;!?:]*\s*', prefix_buf, re.IGNORECASE)
+            if m:
+                stripped = prefix_buf[m.end():].lstrip()
+                if stripped:
+                    stripped = stripped[0].upper() + stripped[1:]
+                    yield stripped
+            else:
+                yield prefix_buf
 
 llm_streamer = LLMStreamer()
