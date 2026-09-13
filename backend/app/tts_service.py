@@ -55,6 +55,45 @@ def get_hal_voice_vector():
         get_kokoro()
     return _hal9000_voice_vector
 
+# In-memory audio cache for frequent phrases and clauses (Echo-inspired sub-millisecond delivery)
+_AUDIO_CACHE: dict[str, bytes] = {}
+_MAX_CACHE_SIZE = 256
+
+def prewarm_hal_cache():
+    """Pre-synthesize canonical HAL 9000 phrases into in-memory cache for 0ms TTFA."""
+    kokoro = get_kokoro()
+    hal_vector = get_hal_voice_vector()
+    if kokoro is None or hal_vector is None:
+        return
+    phrases = [
+        "Good evening, Dev.",
+        "Good afternoon, Dev.",
+        "Good morning, Dev.",
+        "Yes, Dev.",
+        "Certainly, Dev.",
+        "I understand, Dev.",
+        "I am completely operational,",
+        "and all my circuits are functioning perfectly.",
+        "I'm sorry, Dev. I'm afraid I can't do that.",
+        "This mission is too important for me to allow you to jeopardize it.",
+        "No 9000 computer has ever made a mistake or distorted information.",
+        "It can only be attributable to human error.",
+        "I can see you clearly through the ocular sensor.",
+        "All Discovery One subsystems are nominal."
+    ]
+    logger.info("[TTS Cache] Pre-warming canonical HAL 9000 phrases...")
+    for phrase in phrases:
+        try:
+            cache_key = f"kokoro:hal9000:{phrase.strip().lower()}"
+            if cache_key not in _AUDIO_CACHE:
+                samples, sample_rate = kokoro.create(phrase, voice=hal_vector, speed=0.92, lang="en-us")
+                wav_io = io.BytesIO()
+                sf.write(wav_io, samples, sample_rate, format="WAV", subtype="PCM_16")
+                _AUDIO_CACHE[cache_key] = wav_io.getvalue()
+        except Exception as e:
+            logger.warning(f"Failed to prewarm {phrase!r}: {e}")
+    logger.info(f"[TTS Cache] Pre-warmed {len(_AUDIO_CACHE)} phrases for instantaneous 0ms audio playback.")
+
 class TTSService:
     def __init__(self):
         self.provider = settings.TTS_PROVIDER
@@ -77,6 +116,13 @@ class TTSService:
             return
 
         provider = provider_override or self.provider
+
+        # Check in-memory audio cache for 0ms turnaround
+        cache_key = f"{provider}:{voice_override or 'hal9000'}:{clean_text.lower()}"
+        if cache_key in _AUDIO_CACHE:
+            logger.info(f"[TTS Cache Hit] {clean_text[:40]!r} (0ms playback)")
+            yield _AUDIO_CACHE[cache_key]
+            return
 
         # 1. Cartesia Sonic API (Sub-100ms ultra-low-latency)
         if (settings.CARTESIA_API_KEY or provider == "cartesia") and settings.CARTESIA_API_KEY:
@@ -176,6 +222,10 @@ class TTSService:
                     wav_io = io.BytesIO()
                     sf.write(wav_io, samples, sample_rate, format="WAV", subtype="PCM_16")
                     wav_bytes = wav_io.getvalue()
+
+                    # Store in LRU cache for 0ms subsequent playback (Echo-style)
+                    if len(_AUDIO_CACHE) < _MAX_CACHE_SIZE and len(clean_text) < 250:
+                        _AUDIO_CACHE[cache_key] = wav_bytes
 
                     # Yield complete audio buffer in one shot for instant zero-latency client intake
                     yield wav_bytes

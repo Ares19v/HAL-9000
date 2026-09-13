@@ -9,13 +9,16 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.websocket_handler import handle_hal_websocket, telemetry_broadcaster
+from app.tts_service import prewarm_hal_cache
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Launch Discovery One telemetry broadcaster
+    # Launch Discovery One telemetry broadcaster & asynchronous audio cache pre-warming
     telemetry_task = asyncio.create_task(telemetry_broadcaster())
+    cache_task = asyncio.create_task(asyncio.to_thread(prewarm_hal_cache))
     yield
     telemetry_task.cancel()
+    cache_task.cancel()
     try:
         await telemetry_task
     except asyncio.CancelledError:
