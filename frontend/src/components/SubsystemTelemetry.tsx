@@ -110,50 +110,50 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
   const signalDb = telemetry.earth_signal_db ?? -84.2;
 
   return (
-    <div className="w-full flex flex-col gap-3 font-mono text-xs select-none">
+    <div className="w-full flex flex-col gap-3.5 font-mono text-xs select-none">
       
       {/* Top Banner: Mission Elapsed Time & Trajectory */}
-      <div className="relative crt-monitor border border-[#232733] p-3.5 rounded-xl overflow-hidden shadow-lg">
+      <div className="relative crt-monitor border border-[#232736] p-4 rounded-2xl overflow-hidden shadow-xl">
         <div className="absolute inset-0 crt-scanlines pointer-events-none" />
         
-        <div className="flex items-center justify-between pb-2 border-b border-[#1b1e28] text-[10px] text-zinc-500">
-          <span className="font-bold tracking-widest text-zinc-300 flex items-center space-x-1.5">
+        <div className="flex items-center justify-between pb-2.5 border-b border-[#1b1f2d] text-[10px] text-zinc-400">
+          <span className="font-extrabold tracking-widest text-zinc-200 flex items-center space-x-2">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block" />
-            <span>DISCOVERY NAV-COM // FLIGHT METRICS</span>
+            <span className="tracking-[0.2em]">DISCOVERY NAV-COM // FLIGHT TELEMETRY</span>
           </span>
-          <span className="text-zinc-500">EARTH-JUPITER TRANSIT</span>
+          <span className="text-zinc-500 font-bold tracking-widest">TRANSMISSION: NOMINAL</span>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2.5">
-          <div>
-            <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Mission Elapsed Time</div>
-            <div className="text-base font-bold text-amber-400 tracking-wider phosphor-amber">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-3">
+          <div className="bg-[#0b0d14]/80 p-2 rounded border border-[#181a24]">
+            <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Mission Elapsed</div>
+            <div className="text-base font-extrabold text-amber-400 tracking-wider phosphor-amber mt-0.5">
               {telemetry.mission_clock}
             </div>
           </div>
-          <div>
-            <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Destination Lock</div>
-            <div className="text-base font-bold text-cyan-400 phosphor-cyan">
+          <div className="bg-[#0b0d14]/80 p-2 rounded border border-[#181a24]">
+            <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Target Horizon</div>
+            <div className="text-base font-extrabold text-cyan-400 phosphor-cyan mt-0.5">
               {telemetry.destination}
             </div>
           </div>
-          <div>
-            <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Distance Rem.</div>
-            <div className="text-base font-bold text-zinc-200">
+          <div className="bg-[#0b0d14]/80 p-2 rounded border border-[#181a24]">
+            <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Distance Rem.</div>
+            <div className="text-base font-bold text-zinc-200 mt-0.5">
               {telemetry.distance_to_jupiter_km} <span className="text-[10px] text-zinc-500">KM</span>
             </div>
           </div>
-          <div>
-            <div className="text-[9px] text-zinc-500 uppercase tracking-wider">Cruising Speed</div>
-            <div className="text-base font-bold text-green-400 phosphor-green">
+          <div className="bg-[#0b0d14]/80 p-2 rounded border border-[#181a24]">
+            <div className="text-[9px] text-zinc-500 uppercase tracking-widest font-bold">Cruising Speed</div>
+            <div className="text-base font-bold text-green-400 phosphor-green mt-0.5">
               {telemetry.velocity_kms} <span className="text-[10px] text-zinc-500">KM/S</span>
             </div>
           </div>
         </div>
 
         {/* Minimalist Vector Silhouette of USSC Discovery One */}
-        <div className="mt-3 pt-2.5 border-t border-[#181b24] flex items-center justify-between">
-          <svg className="w-full h-8 text-zinc-600 opacity-70" viewBox="0 0 400 30" fill="none">
+        <div className="mt-3.5 pt-2.5 border-t border-[#181b26] flex items-center justify-between">
+          <svg className="w-full h-8 text-zinc-500 opacity-80" viewBox="0 0 400 30" fill="none">
             {/* Command Sphere */}
             <circle cx="25" cy="15" r="11" stroke="currentColor" strokeWidth="1.5" />
             <circle cx="25" cy="15" r="4" fill="currentColor" opacity="0.4" />

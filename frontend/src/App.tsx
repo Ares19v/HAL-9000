@@ -239,20 +239,20 @@ export function App() {
     <div className="min-h-screen text-[#e2e4ee] flex flex-col justify-between select-none relative overflow-x-hidden">
       
       {/* Top Aerospace Cockpit Header */}
-      <header className="w-full bg-[#08090e]/95 backdrop-blur-md border-b border-[#1f222e] px-4 md:px-6 py-3 flex items-center justify-between font-mono text-xs shadow-lg z-20">
-        <div className="flex items-center space-x-3.5">
+      <header className="w-full bg-[#07080d]/95 backdrop-blur-md border-b border-[#1c1f2c] px-4 md:px-8 py-3.5 flex items-center justify-between font-mono text-xs shadow-xl z-20">
+        <div className="flex items-center space-x-4">
           <div className="relative flex h-3 w-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 shadow-[0_0_8px_#ef4444]" />
+            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-600 shadow-[0_0_10px_#ef4444]" />
           </div>
-          <div className="flex items-baseline space-x-2">
+          <div className="flex items-baseline space-x-2.5">
             <span 
-              className="font-black tracking-[0.25em] text-white text-sm drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]"
+              className="font-black tracking-[0.28em] text-white text-sm drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)]"
               style={{ fontFamily: 'var(--font-display)' }}
             >
               USSC DISCOVERY ONE
             </span>
-            <span className="hidden md:inline-block px-2 py-0.5 rounded bg-[#171a25] text-zinc-400 text-[10px] tracking-widest border border-zinc-800">
+            <span className="hidden md:inline-block px-2.5 py-0.5 rounded bg-[#131622] text-zinc-400 text-[10px] tracking-widest border border-zinc-800 font-medium">
               MISSION TO JUPITER // 2001
             </span>
           </div>
@@ -260,16 +260,16 @@ export function App() {
 
         <div className="flex items-center space-x-3.5">
           {/* Connection Indicator */}
-          <div className="flex items-center space-x-2 text-[11px]">
+          <div className="flex items-center space-x-2 text-[11px] bg-[#0c0e15] px-2.5 py-1 rounded border border-[#1b1e2b]">
             {connected ? (
               <div className="flex items-center space-x-1.5 text-green-400">
-                <Wifi className="w-4 h-4" />
-                <span className="hidden sm:inline font-bold tracking-wider phosphor-green">AVIONICS ONLINE</span>
+                <Wifi className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline font-extrabold tracking-wider phosphor-green">AVIONICS ONLINE</span>
               </div>
             ) : (
               <div className="flex items-center space-x-1.5 text-red-400 animate-pulse">
-                <WifiOff className="w-4 h-4" />
-                <span className="hidden sm:inline font-bold tracking-wider phosphor-red">BUS DISCONNECTED</span>
+                <WifiOff className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline font-extrabold tracking-wider phosphor-red">BUS DISCONNECTED</span>
               </div>
             )}
           </div>
@@ -281,14 +281,14 @@ export function App() {
               setOpticalSensorOpen(true);
             }}
             title="Engage Optical Eye Camera [CAM-01]"
-            className={`p-1.5 rounded-md transition-colors cursor-pointer border flex items-center space-x-1.5 ${
+            className={`px-2.5 py-1.5 rounded-[4px] transition-all cursor-pointer border flex items-center space-x-1.5 ${
               opticalSensorOpen 
-                ? 'bg-red-950/80 border-red-500 text-red-400' 
-                : 'hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 border-transparent hover:border-zinc-700'
+                ? 'bg-red-950/90 border-red-500 text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.5)]' 
+                : 'bg-[#10121a] hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 border-[#232736] hover:border-zinc-600'
             }`}
           >
-            <Eye className="w-4 h-4 text-red-500" />
-            <span className="hidden xl:inline text-[10px] font-bold">CAM-01</span>
+            <Eye className="w-3.5 h-3.5 text-red-500" />
+            <span className="hidden xl:inline text-[10px] font-extrabold tracking-wider">CAM-01</span>
           </button>
 
           {/* Cabin Air Hum Toggle */}
@@ -298,7 +298,7 @@ export function App() {
               updateSettings({ ambientHum: !settings.ambientHum });
             }}
             title={settings.ambientHum ? "Mute Cabin Hum [H]" : "Enable Cabin Hum [H]"}
-            className="p-1.5 rounded-md hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer border border-transparent hover:border-zinc-700"
+            className="p-2 rounded-[4px] bg-[#10121a] hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer border border-[#232736] hover:border-zinc-600"
           >
             {settings.ambientHum ? (
               <Volume2 className="w-4 h-4 text-cyan-400" />

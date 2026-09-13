@@ -2,117 +2,128 @@
 
 @layer base {
   :root {
-    --font-display: 'Orbitron', -apple-system, sans-serif;
-    --font-mono: 'Share Tech Mono', monospace;
+    --font-display: 'Michroma', 'Orbitron', -apple-system, sans-serif;
+    --font-brand: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
     --font-sans: 'Rajdhani', sans-serif;
   }
 
   body {
     font-family: var(--font-sans);
-    background: radial-gradient(circle at 50% 35%, #0f1118 0%, #07080b 60%, #020204 100%);
-    color: #d1d5db;
+    background-color: #040407;
+    background-image: 
+      radial-gradient(circle at 50% 25%, rgba(22, 26, 38, 0.45) 0%, rgba(6, 7, 11, 0.95) 60%, #030305 100%),
+      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 48px 48px, 48px 48px;
+    color: #e2e5ef;
     margin: 0;
     padding: 0;
     min-height: 100vh;
+    letter-spacing: 0.02em;
   }
 }
 
-/* Authentic Anodized Dark Brushed Metal with Micro-hairline Texture */
+/* Authentic Machined Anodized Studio Aluminum Bezel */
 .brushed-metal {
   background: 
-    linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px) 0 0 / 3px 100%,
-    linear-gradient(180deg, #22242b 0%, #16171d 40%, #111216 100%);
+    linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px) 0 0 / 2px 100%,
+    linear-gradient(180deg, #2b2e38 0%, #1e2029 35%, #14151c 70%, #0d0e13 100%);
   box-shadow: 
-    inset 0 1px 1px rgba(255, 255, 255, 0.25),
-    inset 1px 0 1px rgba(255, 255, 255, 0.1),
-    inset -1px 0 1px rgba(0, 0, 0, 0.6),
-    inset 0 -2px 3px rgba(0, 0, 0, 0.9),
-    0 25px 60px rgba(0, 0, 0, 0.98),
-    0 0 1px rgba(255, 255, 255, 0.15);
+    inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 1px 0 1px rgba(255, 255, 255, 0.15),
+    inset -1px 0 1px rgba(0, 0, 0, 0.7),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.95),
+    0 30px 80px rgba(0, 0, 0, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
-/* Machined Outer Collar Bezel */
+/* Machined Outer Collar Bezel with Cast Texture */
 .aluminum-bezel {
-  background: radial-gradient(circle at 32% 30%, #5d616c 0%, #30323a 50%, #141519 100%);
+  background: radial-gradient(circle at 35% 28%, #727785 0%, #3e424c 45%, #1b1d24 85%, #101116 100%);
   box-shadow: 
-    inset 2px 2px 4px rgba(255, 255, 255, 0.35),
+    inset 2px 2px 5px rgba(255, 255, 255, 0.45),
     inset -2px -2px 6px rgba(0, 0, 0, 0.95),
-    0 12px 32px rgba(0, 0, 0, 0.98);
+    0 16px 40px rgba(0, 0, 0, 0.98),
+    0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
-/* Precision Knurled Retaining Collar */
+/* Knurled Lathe-Turned Retaining Collar */
 .knurled-ring {
   background: repeating-conic-gradient(
     from 0deg,
-    #17181c 0deg 1.8deg,
-    #333640 1.8deg 3.6deg,
-    #0d0e11 3.6deg 5.4deg
+    #17191f 0deg 1.5deg,
+    #3c404d 1.5deg 3.0deg,
+    #0c0d11 3.0deg 4.5deg
   );
-  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.9);
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.95);
 }
 
-/* HAL 9000 Optic Glows */
+/* High-Gloss Anamorphic & Optical Flares */
 .hal-eye-glow {
-  filter: drop-shadow(0 0 20px #ff1a1a) drop-shadow(0 0 50px rgba(255, 30, 0, 0.75));
+  filter: drop-shadow(0 0 25px #ff1a1a) drop-shadow(0 0 60px rgba(255, 30, 0, 0.75));
 }
 
 .hal-speaking-glow {
-  filter: drop-shadow(0 0 30px #ff2525) drop-shadow(0 0 85px rgba(255, 45, 0, 0.98));
+  filter: drop-shadow(0 0 35px #ff2525) drop-shadow(0 0 95px rgba(255, 45, 0, 0.98));
 }
 
-/* CRT Curved Glass & Bezel */
+/* Precision Aerospace CRT Screen Unit */
 .crt-monitor {
-  background: #06070a;
+  background: radial-gradient(circle at 50% 50%, #0a0c13 0%, #05060a 100%);
+  border: 1px solid #1f2330;
   box-shadow: 
-    inset 0 0 18px rgba(0, 0, 0, 0.95),
-    inset 0 1px 2px rgba(255, 255, 255, 0.08),
-    0 4px 12px rgba(0, 0, 0, 0.6);
+    inset 0 0 24px rgba(0, 0, 0, 0.95),
+    inset 0 1px 1px rgba(255, 255, 255, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.75);
 }
 
-/* CRT Phosphor Scanlines Effect */
+/* Subtle Raster Scanlines with RGB Subpixel Dispersion */
 .crt-scanlines {
-  background: linear-gradient(
-    rgba(18, 16, 16, 0) 50%, 
-    rgba(0, 0, 0, 0.45) 50%
-  ), linear-gradient(
-    90deg,
-    rgba(255, 0, 0, 0.035),
-    rgba(0, 255, 0, 0.015),
-    rgba(0, 0, 255, 0.035)
-  );
+  background: 
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.015), rgba(0, 0, 255, 0.03));
   background-size: 100% 3px, 6px 100%;
   pointer-events: none;
 }
 
-/* Subtle Phosphor Text Glows */
+/* Backlit Annunciator Switch Styling */
+.annunciator-btn {
+  box-shadow: 
+    inset 0 1px 1px rgba(255, 255, 255, 0.18),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.7),
+    0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* Phosphor Glows */
 .phosphor-green {
-  text-shadow: 0 0 6px rgba(34, 197, 94, 0.65);
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.75);
 }
 
 .phosphor-amber {
-  text-shadow: 0 0 6px rgba(245, 158, 11, 0.65);
+  text-shadow: 0 0 8px rgba(245, 158, 11, 0.75);
 }
 
 .phosphor-cyan {
-  text-shadow: 0 0 6px rgba(6, 182, 212, 0.65);
+  text-shadow: 0 0 8px rgba(6, 182, 212, 0.75);
 }
 
 .phosphor-red {
-  text-shadow: 0 0 6px rgba(239, 68, 68, 0.7);
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.85);
 }
 
-/* Custom Scrollbar for Terminals */
+/* Custom Cockpit Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #08090d;
+  background: #06070a;
 }
 ::-webkit-scrollbar-thumb {
-  background: #252833;
+  background: #232736;
   border-radius: 2px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #d93838;
+  background: #dc2626;
 }

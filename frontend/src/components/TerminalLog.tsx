@@ -43,32 +43,32 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
   ];
 
   return (
-    <div className="w-full flex flex-col crt-monitor border border-[#262936] rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.85)] overflow-hidden font-mono text-xs">
+    <div className="w-full flex flex-col crt-monitor border border-[#262a38] rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.92)] overflow-hidden font-mono text-xs">
       
       {/* Terminal Title Bar */}
-      <div className="bg-[#0e1017] border-b border-[#202330] px-4 py-2.5 flex items-center justify-between select-none">
-        <div className="flex items-center space-x-2.5 text-zinc-400">
+      <div className="bg-[#0f111a] border-b border-[#222636] px-4 py-3 flex items-center justify-between select-none">
+        <div className="flex items-center space-x-2.5 text-zinc-300">
           <Terminal className="w-4 h-4 text-red-500" />
-          <span className="font-bold tracking-[0.15em] text-[11px] text-zinc-200">
+          <span className="font-extrabold tracking-[0.2em] text-[11px] text-zinc-200">
             DISCOVERY COMM-TELETYPE // TRANSCRIPTION
           </span>
         </div>
         <div className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_6px_#ef4444]" />
-          <span className="text-[10px] text-zinc-500 font-bold tracking-widest uppercase">REC</span>
+          <div className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]" />
+          <span className="text-[10px] text-zinc-400 font-extrabold tracking-widest uppercase">REC // CHANNEL D-1</span>
         </div>
       </div>
 
       {/* Messages Scroll Area with CRT Phosphor Scanlines */}
       <div 
         ref={scrollRef}
-        className="relative h-[270px] overflow-y-auto p-4 space-y-3.5 bg-[#050609] border-b border-[#1a1c26]"
+        className="relative h-[290px] overflow-y-auto p-4 space-y-4 bg-[#050609] border-b border-[#1c1f2c]"
       >
         {/* CRT Scanline Overlay */}
         <div className="absolute inset-0 crt-scanlines pointer-events-none" />
 
         {/* Initial System Diagnostic Stamp */}
-        <div className="text-zinc-600 text-[10px] border-b border-zinc-900/80 pb-2.5 tracking-wider select-none">
+        <div className="text-zinc-600 text-[10px] border-b border-zinc-900/90 pb-2.5 tracking-wider select-none font-medium">
           [HAL 9000 // CORE HEURISTICS ONLINE // URBANA, ILLINOIS // AUDIO CHANNEL D-1 NOMINAL]
         </div>
 
@@ -101,7 +101,7 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
             </div>
             <div className="pl-3 text-zinc-100 font-sans tracking-wide text-[15px] font-medium">
               {currentLlmText}
-              <span className="inline-block w-2 h-4 bg-red-500 ml-1.5 align-middle animate-pulse shadow-[0_0_8px_#ef4444]" />
+              <span className="inline-block w-2.5 h-4.5 bg-red-500 ml-1.5 align-middle animate-pulse shadow-[0_0_10px_#ef4444]" />
             </div>
           </div>
         )}
@@ -115,8 +115,8 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
       </div>
 
       {/* Quick Access Iconic Prompts Bar */}
-      <div className="bg-[#090b10] px-3.5 py-2 border-b border-[#1b1d28] flex items-center gap-2 overflow-x-auto select-none">
-        <div className="text-[10px] text-zinc-500 flex items-center space-x-1 shrink-0 font-bold">
+      <div className="bg-[#0b0d14] px-3.5 py-2.5 border-b border-[#1e2230] flex items-center gap-2.5 overflow-x-auto select-none">
+        <div className="text-[10px] text-zinc-400 flex items-center space-x-1 shrink-0 font-extrabold tracking-wider">
           <Zap className="w-3.5 h-3.5 text-amber-400" />
           <span>PROMPTS:</span>
         </div>
@@ -124,7 +124,7 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
           <button
             key={idx}
             onClick={() => onSendMessage(prompt)}
-            className="shrink-0 px-2.5 py-1 rounded-[3px] bg-[#12141d] hover:bg-red-950/70 text-zinc-300 hover:text-red-200 border border-[#202330] hover:border-red-700/80 text-[10px] transition-all cursor-pointer font-sans tracking-wide shadow-sm"
+            className="shrink-0 px-3 py-1.5 rounded-[4px] bg-[#141622] hover:bg-red-950/80 text-zinc-300 hover:text-red-200 border border-[#24283b] hover:border-red-600 text-[10px] transition-all cursor-pointer font-sans tracking-wider shadow-sm font-medium"
           >
             "{prompt}"
           </button>
@@ -132,21 +132,21 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
       </div>
 
       {/* High-Contrast Aerospace Input Console */}
-      <form onSubmit={handleSubmit} className="p-3 bg-[#0a0c12] flex items-center space-x-2.5">
+      <form onSubmit={handleSubmit} className="p-3.5 bg-[#0d0f17] flex items-center space-x-3">
         <input
           type="text"
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}
           placeholder="Speak to HAL or transmit flight command text..."
-          className="flex-1 bg-[#050608] border border-[#2b2e3c] rounded px-3.5 py-2 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 text-xs tracking-wide"
+          className="flex-1 bg-[#06070a] border border-[#2f3345] rounded-md px-4 py-2.5 text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/50 text-xs tracking-wide shadow-inner"
         />
         <button
           type="submit"
           disabled={!inputText.trim()}
-          className="px-4 py-2 rounded-[3px] bg-red-700 hover:bg-red-600 disabled:opacity-30 disabled:hover:bg-red-700 text-white flex items-center space-x-1.5 font-bold text-[11px] tracking-[0.15em] transition-all shadow-[0_2px_8px_rgba(239,68,68,0.4)] cursor-pointer"
+          className="px-5 py-2.5 rounded-[4px] bg-red-700 hover:bg-red-600 disabled:opacity-30 disabled:hover:bg-red-700 text-white flex items-center space-x-2 font-extrabold text-[11px] tracking-[0.2em] transition-all shadow-[0_2px_12px_rgba(239,68,68,0.4)] cursor-pointer"
         >
           <span>TRANSMIT</span>
-          <Send className="w-3 h-3" />
+          <Send className="w-3.5 h-3.5" />
         </button>
       </form>
 
