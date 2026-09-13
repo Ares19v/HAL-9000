@@ -120,8 +120,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               onChange={(e) => onUpdateSettings({ voice: e.target.value })}
               className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2.5 text-zinc-200 focus:outline-none focus:border-red-500 cursor-pointer font-sans text-xs"
             >
-              <optgroup label="🌟 Kokoro-82M Local Neural (StyleTTS2 Prosody // Zero Latency)">
-                <option value="bm_george">Kokoro: George (Douglas Rain Theatrical Mid-Atlantic) [RECOMMENDED]</option>
+              <optgroup label="🌟 Synthesized Movie-Accurate HAL 9000 (Calm, Calculating, Peaceful)">
+                <option value="hal9000">HAL 9000 (Douglas Rain Acoustic Matrix @ 0.88x) [RECOMMENDED]</option>
+              </optgroup>
+              <optgroup label="🎙️ Kokoro-82M Individual Base Voices">
+                <option value="bm_george">Kokoro: George (British Theatrical Mid-Atlantic)</option>
                 <option value="bm_daniel">Kokoro: Daniel (British Deep Resonant)</option>
                 <option value="am_michael">Kokoro: Michael (Calculated Technical Baritone)</option>
                 <option value="am_adam">Kokoro: Adam (Calm Measured American)</option>

@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
   openaiKey: '',
   geminiKey: '',
-  voice: 'bm_george', // Kokoro-82M British Male George: Douglas Rain's exact mid-Atlantic cadence
+  voice: 'hal9000', // Custom synthesized acoustic signature: 55% George + 30% Daniel + 15% Michael at 0.88x
   ambientHum: false, // Default off until user engages to respect browser audio autoplay policy
   vadEnabled: false,
   soundEffects: true,
@@ -30,8 +30,8 @@ export function App() {
       const saved = localStorage.getItem('hal9000_settings');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (!parsed.voice || parsed.voice === 'en-US-GuyNeural') {
-          parsed.voice = 'en-US-ChristopherNeural';
+        if (!parsed.voice || parsed.voice.startsWith('en-US-') || parsed.voice === 'bm_george') {
+          parsed.voice = 'hal9000';
         }
         return { ...DEFAULT_SETTINGS, ...parsed };
       }
