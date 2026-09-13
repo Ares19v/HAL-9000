@@ -25,6 +25,9 @@ export interface TelemetryData {
   velocity_kms: string;
   ae35_status: string;
   ae35_error_percent: number;
+  ae35_azimuth_deg?: number;
+  ae35_elevation_deg?: number;
+  earth_signal_db?: number;
   centrifuge_rpm: number;
   reactor_output_percent: number;
   cabin_pressure_psi: number;
@@ -32,6 +35,7 @@ export interface TelemetryData {
   cryo_crew: CryoCrewMember[];
   active_crew: ActiveCrewMember[];
   pod_bays: Record<string, PodBayStatus>;
+  memory_banks?: Record<string, number>;
   memory_integrity_percent: number;
 }
 

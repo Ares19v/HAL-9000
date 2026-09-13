@@ -41,6 +41,10 @@ class DiscoveryTelemetry:
         # Subtly oscillating parameters for realistic retro telemetry
         w = elapsed * 0.5
         antenna_error = 0.002 + 0.001 * math.sin(w) if not self.ae35_fault_active else 0.485 + 0.12 * math.sin(w * 3)
+        azimuth_deg = (142.34 + 0.02 * math.sin(w * 0.7)) if not self.ae35_fault_active else (142.34 + 14.8 * math.sin(w * 2))
+        elevation_deg = (-18.21 + 0.01 * math.cos(w * 0.5)) if not self.ae35_fault_active else (-18.21 + 9.4 * math.cos(w * 2))
+        signal_db = -84.2 + 0.3 * math.sin(w) if not self.ae35_fault_active else -118.5 + 4.2 * math.sin(w * 2)
+
         reactor_output = 99.8 + 0.2 * math.cos(w * 0.3)
         cabin_pressure = 5.2 + 0.02 * math.sin(w * 0.1)  # 5.2 psi pure O2 / nitrogen mix
         
@@ -52,6 +56,9 @@ class DiscoveryTelemetry:
             "velocity_kms": "27.84",
             "ae35_status": "CRITICAL / FAULT PREDICTED" if self.ae35_fault_active else "NOMINAL",
             "ae35_error_percent": round(antenna_error, 4),
+            "ae35_azimuth_deg": round(azimuth_deg, 2),
+            "ae35_elevation_deg": round(elevation_deg, 2),
+            "earth_signal_db": round(signal_db, 1),
             "centrifuge_rpm": 5.2,
             "reactor_output_percent": round(reactor_output, 1),
             "cabin_pressure_psi": round(cabin_pressure, 2),
@@ -66,6 +73,7 @@ class DiscoveryTelemetry:
                 {"name": "POOLE, F.", "role": "DEPUTY", "loc": "CENTRIFUGE"}
             ],
             "pod_bays": self.pod_bays,
+            "memory_banks": self.memory_banks,
             "memory_integrity_percent": sum(self.memory_banks.values()) / 4.0
         }
 
