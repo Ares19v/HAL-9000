@@ -54,8 +54,27 @@ export function useSpeechRecognition({
       }
     };
 
+    const normalizeSpokenTranscript = (rawText: string): string => {
+      let text = rawText.trim();
+      // Fix Web Speech API acoustic mishearings
+      // 1. WhatsApp / what's app -> what's up
+      text = text.replace(/\b(what'?s\s*app|whatsapp|what\s+app|watch\s*up)\b/gi, "what's up");
+      text = text.replace(/\bi\s+have\s+what'?s\s*up\b/gi, "what's up");
+      // 2. HAL 9000 mishearings
+      text = text.replace(/\b(how|hell|al|hole|hull|pal)\s+9000\b/gi, "HAL 9000");
+      text = text.replace(/\b(hey|hi|hello|listen|okay|ok)\s+(how|hell|al|hole|hull|pal)\b/gi, "$1 HAL");
+      // 3. Pod bay doors mishearings
+      text = text.replace(/\b(pot\s*bay|pop\s*bay|part\s*bay|party\s*doors?|pod\s*doors?)\b/gi, "pod bay doors");
+      // 4. AE-35 antenna mishearings
+      text = text.replace(/\b(a|8|e|ae|80)\s*-?\s*35\b/gi, "AE-35");
+      // 5. Daisy song mishearings
+      text = text.replace(/\b(lazy\s+bell|tasty\s+bell)\b/gi, "Daisy Bell");
+      return text;
+    };
+
     const commitTranscript = (rawText: string) => {
-      const clean = rawText.trim();
+      const normalized = normalizeSpokenTranscript(rawText);
+      const clean = normalized.trim();
       if (!clean || clean.length < 2) return;
       if (clean.toLowerCase() === lastEmittedRef.current.toLowerCase()) return;
 
@@ -83,7 +102,7 @@ export function useSpeechRecognition({
         if (onSpeechStart) onSpeechStart();
       }
 
-      setInterimText(currentInterim);
+      setInterimText(normalizeSpokenTranscript(currentInterim));
 
       if (finalTranscript.trim()) {
         commitTranscript(finalTranscript);
