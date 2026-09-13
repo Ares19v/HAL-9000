@@ -24,34 +24,34 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
   onBlip
 }) => {
   return (
-    <div className="w-full flex flex-wrap items-center justify-between gap-3 p-3.5 bg-[#090a0f] border border-[#222530] rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] select-none">
+    <div className="w-full flex flex-wrap items-center justify-between gap-3.5 p-4 bg-[#08090e] border border-[#232736] rounded-2xl shadow-[0_15px_40px_rgba(0,0,0,0.85)] select-none">
       
       {/* Microphone Status & Push-To-Talk Toggle */}
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3.5">
         <button
           onClick={() => {
             if (onBlip) onBlip();
             onToggleListening();
           }}
-          className={`flex items-center space-x-2 px-5 py-2.5 rounded-[4px] font-mono text-xs font-bold tracking-wider uppercase transition-all duration-200 cursor-pointer shadow-lg ${
+          className={`flex items-center space-x-2.5 px-6 py-3 rounded-[5px] font-mono text-xs font-extrabold tracking-widest uppercase transition-all duration-200 cursor-pointer shadow-xl ${
             isListening 
-              ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(239,68,68,0.7)] border border-red-400' 
-              : 'bg-[#151720] hover:bg-[#1e212d] text-zinc-300 border border-[#2c303f] hover:border-zinc-600'
+              ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_25px_rgba(239,68,68,0.8)] border border-red-400 scale-[1.02]' 
+              : 'bg-[#151722] hover:bg-[#1d202e] text-zinc-200 border border-[#2e3244] hover:border-zinc-500 hover:shadow-[0_0_12px_rgba(255,255,255,0.05)]'
           }`}
         >
           {isListening ? (
             <>
-              <span className="relative flex h-2.5 w-2.5">
+              <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-200 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-white shadow-[0_0_6px_#fff]" />
               </span>
               <Mic className="w-4 h-4 text-white animate-bounce" />
-              <span className="tracking-[0.15em]">RECORDING // [SPACE] TO SEND</span>
+              <span className="tracking-[0.2em]">RECORDING // [SPACE] TO SEND</span>
             </>
           ) : (
             <>
               <MicOff className="w-4 h-4 text-zinc-400" />
-              <span className="tracking-[0.15em]">PUSH TO TALK [SPACE]</span>
+              <span className="tracking-[0.2em]">PUSH TO TALK [SPACE]</span>
             </>
           )}
         </button>
@@ -62,14 +62,14 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
             if (onBlip) onBlip();
             onToggleVad();
           }}
-          className={`flex items-center space-x-2 px-4 py-2.5 rounded-[4px] border text-xs font-mono font-bold tracking-wider transition-all duration-200 cursor-pointer ${
+          className={`flex items-center space-x-2 px-4 py-3 rounded-[5px] border text-xs font-mono font-extrabold tracking-wider transition-all duration-200 cursor-pointer ${
             vadEnabled
-              ? 'border-cyan-400 bg-cyan-950/60 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.45)]'
-              : 'border-[#242733] bg-[#12141c] text-zinc-500 hover:text-zinc-300 hover:border-zinc-700'
+              ? 'border-cyan-400 bg-cyan-950/70 text-cyan-200 shadow-[0_0_18px_rgba(6,182,212,0.5)]'
+              : 'border-[#242838] bg-[#10121b] text-zinc-400 hover:text-zinc-200 hover:border-zinc-600'
           }`}
         >
-          <Radio className={`w-3.5 h-3.5 ${vadEnabled ? 'text-cyan-300 animate-spin' : 'text-zinc-600'}`} />
-          <span>HANDS-FREE VAD: {vadEnabled ? 'ACTIVE' : 'STANDBY'}</span>
+          <Radio className={`w-3.5 h-3.5 ${vadEnabled ? 'text-cyan-300 animate-spin' : 'text-zinc-500'}`} />
+          <span>HANDS-FREE VAD: {vadEnabled ? 'ENGAGED' : 'STANDBY'}</span>
         </button>
       </div>
 
@@ -81,10 +81,10 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
               if (onBlip) onBlip();
               onInterrupt();
             }}
-            className="flex items-center space-x-2 px-4 py-2.5 rounded-[4px] bg-amber-950/90 hover:bg-amber-900 border-2 border-amber-500 text-amber-200 font-mono text-xs font-bold tracking-widest uppercase transition-all shadow-[0_0_18px_rgba(245,158,11,0.6)] cursor-pointer animate-pulse"
+            className="flex items-center space-x-2 px-5 py-3 rounded-[5px] bg-amber-950/95 hover:bg-amber-900 border-2 border-amber-500 text-amber-200 font-mono text-xs font-extrabold tracking-widest uppercase transition-all shadow-[0_0_22px_rgba(245,158,11,0.7)] cursor-pointer animate-pulse"
           >
             <Square className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-            <span>INTERRUPT HAL SPEECH</span>
+            <span>INTERRUPT HAL SPEECH [ESC]</span>
           </button>
         )}
 
