@@ -167,16 +167,23 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
             pendingSentenceAudioRef.current.delete(data.sentence_id);
           } else if (data.type === 'stream_complete') {
             setCurrentLlmText((finalText) => {
-              if (finalText) {
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: Date.now().toString(),
-                    role: 'hal',
-                    text: finalText,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+              const textToCommit = finalText.trim();
+              if (textToCommit) {
+                setMessages((prev) => {
+                  // Prevent accidental double insertion if already added
+                  if (prev.length > 0 && prev[prev.length - 1].role === 'hal' && prev[prev.length - 1].text === textToCommit) {
+                    return prev;
                   }
-                ]);
+                  return [
+                    ...prev,
+                    {
+                      id: Date.now().toString(),
+                      role: 'hal',
+                      text: textToCommit,
+                      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                    }
+                  ];
+                });
               }
               return '';
             });

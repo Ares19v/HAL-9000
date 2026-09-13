@@ -93,7 +93,7 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
         ))}
 
         {/* Live Streaming Assistant Text */}
-        {currentLlmText && (
+        {currentLlmText && (!messages.length || messages[messages.length - 1].text !== currentLlmText.trim()) && (
           <div className="space-y-1 relative z-10">
             <div className="flex items-center space-x-2 text-[10px]">
               <span className="text-red-400 font-bold tracking-wider phosphor-red">■ HAL 9000</span>

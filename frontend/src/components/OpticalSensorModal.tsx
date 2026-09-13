@@ -6,19 +6,22 @@ interface OpticalSensorModalProps {
   onClose: () => void;
   onSendVisionFrame: (description: string) => void;
   onBlip?: () => void;
+  groqKey?: string;
 }
 
 export const OpticalSensorModal: React.FC<OpticalSensorModalProps> = ({
   isOpen,
   onClose,
   onSendVisionFrame,
-  onBlip
+  onBlip,
+  groqKey
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [streamActive, setStreamActive] = useState<boolean>(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const [sceneTag, setSceneTag] = useState<string>("CREW OBSERVED // BOWMAN, D.");
+  const [sceneTag, setSceneTag] = useState<string>("OPTICAL EYE INITIALIZING // STAND BY");
+  const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const captureIntervalRef = useRef<any>(null);
 
   // Start webcam when opened
@@ -61,31 +64,93 @@ export const OpticalSensorModal: React.FC<OpticalSensorModalProps> = ({
     };
   }, [isOpen]);
 
-  // Periodic simulated vision scene analysis update (sent to HAL's cognitive bus)
-  const captureAndNotify = useCallback(() => {
-    if (!streamActive || !videoRef.current) return;
-    
-    // In real-world deployment, this frame could be fed to an on-device/Groq Vision model.
-    // For reliable instantaneous latency, we generate high-fidelity Discovery One crew telemetry:
-    const sceneDescriptions = [
-      "Dave Bowman is seated before the primary terminal in Discovery flight uniform, inspecting the AE-35 telemetry",
-      "Dave is speaking into the audio microphone with focused, steady posture",
-      "Dave Bowman is observing the HAL 9000 eye lens, awaiting flight response",
-      "Commander Bowman is currently in the bridge command pod, attentive and alert"
+  // Real-time frame capture & analysis
+  const captureAndNotify = useCallback(async () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.videoWidth === 0 || video.videoHeight === 0) return;
+
+    canvas.width = 320;
+    canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0, 320, 240);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.6);
+
+    // If Groq key is available, run real multimodal vision inference
+    if (groqKey) {
+      setIsAnalyzing(true);
+      try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.2-11b-vision-preview",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: "You are the optical eye camera of HAL 9000 looking at astronaut Dave Bowman. In ONE brief, clinical sentence (15 words max), describe what the person is doing, their expression, or what they are holding. Example: 'Dave Bowman is looking directly into the lens with a focused expression.'"
+                  },
+                  {
+                    type: "image_url",
+                    image_url: { url: dataUrl }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 45,
+            temperature: 0.2
+          })
+        });
+
+        if (res.ok) {
+          const result = await res.json();
+          const desc = result.choices?.[0]?.message?.content?.trim();
+          if (desc) {
+            setSceneTag(desc);
+            onSendVisionFrame(desc);
+            setIsAnalyzing(false);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("[OpticalSensor] Real vision API error:", e);
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
+
+    // High-fidelity fallback scene descriptors
+    const fallbacks = [
+      "Dave Bowman is seated before the terminal looking directly at the primary optical lens",
+      "Dave Bowman is seated at the console inspecting Discovery telemetry",
+      "Commander Bowman is present at the flight bridge, alert and upright",
+      "Dave Bowman is observing the HAL 9000 indicators with calm posture"
     ];
-    const picked = sceneDescriptions[Math.floor(Math.random() * sceneDescriptions.length)];
+    const picked = fallbacks[Math.floor(Math.random() * fallbacks.length)];
     setSceneTag(picked);
     onSendVisionFrame(picked);
-  }, [streamActive, onSendVisionFrame]);
+  }, [groqKey, onSendVisionFrame]);
 
   useEffect(() => {
     if (isOpen && streamActive) {
-      captureAndNotify();
-      captureIntervalRef.current = setInterval(captureAndNotify, 6000);
+      // First scan after 1.5s
+      const initialTimer = setTimeout(captureAndNotify, 1500);
+      captureIntervalRef.current = setInterval(captureAndNotify, 6500);
+      return () => {
+        clearTimeout(initialTimer);
+        if (captureIntervalRef.current) clearInterval(captureIntervalRef.current);
+      };
     }
-    return () => {
-      if (captureIntervalRef.current) clearInterval(captureIntervalRef.current);
-    };
   }, [isOpen, streamActive, captureAndNotify]);
 
   if (!isOpen) return null;
@@ -165,9 +230,14 @@ export const OpticalSensorModal: React.FC<OpticalSensorModalProps> = ({
               </div>
 
               {/* Bottom Scene Observation Tag */}
-              <div className="absolute bottom-3 left-3 right-3 p-2 bg-black/80 border border-red-900/60 rounded text-[10px] text-zinc-300 font-mono">
-                <span className="text-red-400 font-bold mr-1.5">► SCENE REGISTER:</span>
-                <span>{sceneTag}</span>
+              <div className="absolute bottom-3 left-3 right-3 p-2 bg-black/80 border border-red-900/60 rounded text-[10px] text-zinc-300 font-mono flex items-center justify-between">
+                <div className="flex items-center space-x-2 truncate">
+                  <span className="text-red-400 font-bold mr-1.5 shrink-0">► SCENE REGISTER:</span>
+                  <span className="truncate">{sceneTag}</span>
+                </div>
+                {isAnalyzing && (
+                  <span className="shrink-0 text-cyan-400 text-[9px] font-bold animate-pulse">ANALYZING FRAME...</span>
+                )}
               </div>
             </>
           )}

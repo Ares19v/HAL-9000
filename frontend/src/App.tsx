@@ -334,6 +334,7 @@ export function App() {
         onClose={() => setOpticalSensorOpen(false)}
         onSendVisionFrame={sendVisionFrame}
         onBlip={triggerBlip}
+        groqKey={settings.groqKey}
       />
 
     </div>

@@ -15,12 +15,16 @@ class Settings(BaseSettings):
     ELEVENLABS_API_KEY: Optional[str] = None
     ELEVENLABS_VOICE_ID: Optional[str] = None  # Custom HAL 9000 voice clone if user has one
     
-    # TTS Configuration
+    # TTS Configuration (Calibrated Douglas Rain baritone with crisp cadence)
     TTS_PROVIDER: str = "edge"  # "edge", "openai", "elevenlabs"
     EDGE_VOICE: str = "en-US-GuyNeural"          # Authentic Douglas Rain warm baritone
-    EDGE_RATE: str = "-8%"                       # Unhurried, deliberate HAL 9000 cadence
-    EDGE_PITCH: str = "-10Hz"                    # Intimate close-mic radio resonance
+    EDGE_RATE: str = "-2%"                       # Natural, crisp conversational pace
+    EDGE_PITCH: str = "-4Hz"                     # Warm intimate proximity
     
+    # Local Ollama Support (Zero-key offline inference)
+    OLLAMA_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.2:latest"
+
     # Discovery One Simulation
     MISSION_NAME: str = "Discovery One (Jupiter Mission)"
     CREW_LEADER: str = "Dr. David Bowman"

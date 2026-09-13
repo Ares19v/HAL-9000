@@ -107,13 +107,13 @@ export function useSpeechRecognition({
       if (finalTranscript.trim()) {
         commitTranscript(finalTranscript);
       } else if (vadEnabled && currentInterim.trim()) {
-        // VAD pause detection: 780ms of silence commits phrase for fast turn-taking
+        // VAD pause detection: 450ms of silence commits phrase for fast, snappy turn-taking
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           if (currentInterim.trim()) {
             commitTranscript(currentInterim);
           }
-        }, 780);
+        }, 450);
       }
     };
 

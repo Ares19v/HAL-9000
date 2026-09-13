@@ -57,14 +57,14 @@ class LLMStreamer:
         active_openai = openai_key or settings.OPENAI_API_KEY
         active_gemini = gemini_key or settings.GEMINI_API_KEY
 
-        # Append user message
-        self.conversation_history.append({"role": "user", "content": prompt})
-        # Keep last 10 messages for context
+        # Append user message (with visual observation if available)
+        self.conversation_history.append({"role": "user", "content": augmented_prompt})
+        # Keep last 10 messages for rich conversational context
         history = self.conversation_history[-10:]
 
         full_response = ""
 
-        # 2. Try Groq (Fastest LLM inference engine)
+        # 2. Try Groq (Fastest LLM inference engine - LLaMA 3.3 70B at >300 t/s)
         if active_groq:
             try:
                 headers = {
@@ -75,7 +75,7 @@ class LLMStreamer:
                     "model": "llama-3.3-70b-versatile",
                     "messages": [{"role": "system", "content": HAL_SYSTEM_PROMPT}] + history,
                     "stream": True,
-                    "temperature": 0.3,
+                    "temperature": 0.35,
                     "max_tokens": 400
                 }
                 async with httpx.AsyncClient(timeout=15.0) as client:
@@ -174,12 +174,41 @@ class LLMStreamer:
             except Exception as e:
                 logger.error(f"Gemini streaming error: {e}")
 
-        # 5. Dynamic Procedural Cognitive Engine (Contextual Reasoning)
+        # 5. Try Local Ollama (Free, runs offline if installed)
+        try:
+            ollama_url = f"{settings.OLLAMA_URL}/api/chat"
+            ollama_payload = {
+                "model": settings.OLLAMA_MODEL,
+                "messages": [{"role": "system", "content": HAL_SYSTEM_PROMPT}] + history,
+                "stream": True
+            }
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                async with client.stream("POST", ollama_url, json=ollama_payload) as response:
+                    if response.status_code == 200:
+                        async for line in response.aiter_lines():
+                            if line:
+                                try:
+                                    chunk = json.loads(line)
+                                    delta = chunk.get("message", {}).get("content", "")
+                                    if delta:
+                                        full_response += delta
+                                        yield delta
+                                    if chunk.get("done", False):
+                                        break
+                                except Exception:
+                                    continue
+                        if full_response:
+                            self.conversation_history.append({"role": "assistant", "content": full_response})
+                            return
+        except Exception:
+            pass  # Ollama not running locally, proceed to dynamic cognitive engine
+
+        # 6. Dynamic Procedural Cognitive Engine (Contextual Reasoning)
         fallback_text = generate_contextual_response(prompt, history, visual_context=visual_context)
         words = fallback_text.split(" ")
         for i, word in enumerate(words):
             yield word + (" " if i < len(words) - 1 else "")
-            await asyncio.sleep(0.025)
+            await asyncio.sleep(0.015)
         self.conversation_history.append({"role": "assistant", "content": fallback_text})
 
 llm_streamer = LLMStreamer()
