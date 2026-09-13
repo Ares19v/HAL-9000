@@ -57,20 +57,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md select-none">
-      <div className="relative w-full max-w-lg bg-[#0c0e14] border-2 border-[#2f3342] rounded-xl shadow-[0_25px_80px_rgba(0,0,0,0.98)] p-6 font-mono text-xs text-zinc-300">
+      <div className="relative w-full max-w-xl bg-[#090b12] border-2 border-[#2c3042] rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.98)] p-6 font-mono text-xs text-zinc-300 select-none">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-3.5 border-b border-[#202330]">
-          <div className="flex items-center space-x-2.5 text-red-400 font-bold uppercase tracking-[0.18em]">
+        <div className="flex items-center justify-between pb-4 border-b border-[#1f2334]">
+          <div className="flex items-center space-x-2.5 text-red-500 font-extrabold uppercase tracking-[0.2em]">
             <Sliders className="w-4 h-4 text-red-500" />
-            <span className="text-sm">SYSTEM CONFIGURATION // DISCOVERY ONE</span>
+            <span className="text-sm">SYSTEM CONFIGURATION // DISCOVERY ONE AVIONICS</span>
           </div>
           <button 
             onClick={() => {
               if (onBlip) onBlip();
               onClose();
             }}
-            className="text-zinc-500 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="text-zinc-500 hover:text-white p-1 rounded-md hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
