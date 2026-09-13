@@ -34,4 +34,5 @@ Thumbs.db
 # Model weights / binaries
 backend/models/*.onnx
 backend/models/*.bin
-
+backend/models/*.npy
+backend/models/

@@ -29,41 +29,143 @@ ABBREVIATIONS = {
     "no.", "etc.", "e.g.", "i.e.", "vs.", "st.", "col.", "gen.", "capt.", "cmdr."
 }
 
-def extract_complete_sentences(buffer: str) -> Tuple[List[str], str]:
+def extract_speech_chunks(buffer: str, is_first: bool = False) -> Tuple[List[str], str, bool]:
     """
-    Intelligently split buffer into complete sentences while respecting
-    abbreviations and short acronyms. Returns (complete_sentences, remaining_buffer).
+    Split stream buffer into spoken speech chunks with sub-second Time-To-First-Audio (TTFA).
+    - If is_first is True: eagerly emit on early punctuation ([,;:—] or [.?!]) after 2-7 words,
+      or at word 5 if no punctuation, so voice playback starts in <500ms.
+    - If is_first is False: split on sentence boundaries [.?!;] or clause breaks [,;—] if >= 8 words.
     """
-    # Look for sentence boundary punctuation followed by space or newline
-    matches = list(re.finditer(r'([.?!;]+)(?:\s+|$)', buffer))
-    if not matches:
-        return [], buffer
+    chunks = []
+    text = buffer
 
-    sentences = []
-    last_idx = 0
+    while text:
+        text_stripped = text.strip()
+        if not text_stripped:
+            break
 
-    for match in matches:
-        end_pos = match.end()
-        candidate = buffer[last_idx:end_pos].strip()
-        
-        # Check if candidate ends with an abbreviation
-        words = candidate.split()
-        if words:
-            last_word = words[-1].lower()
-            if last_word in ABBREVIATIONS:
-                # Do not split on this punctuation
+        if is_first:
+            # 1. Early sentence termination [.?!] for 1-7 words (e.g. 'Good evening, Dave.')
+            sent_matches = list(re.finditer(r'([.?!]+)(?:\s+|$)', text))
+            found_early_sent = False
+            for sm in sent_matches:
+                cand = text[:sm.end()].strip()
+                words = cand.split()
+                if words and words[-1].lower() in ABBREVIATIONS:
+                    continue
+                if 1 <= len(words) <= 7:
+                    chunks.append(cand)
+                    text = text[sm.end():]
+                    is_first = False
+                    found_early_sent = True
+                    break
+            if found_early_sent:
                 continue
-            # Check for single-letter initials like "C." or "E."
-            if len(last_word) == 2 and last_word[0].isalpha() and last_word[1] == '.':
+
+            # 2. Early clause break [,;:—] for 3-7 words (e.g. 'I am completely operational,')
+            clause_matches = list(re.finditer(r'([,;:—]+)(?:\s+|$)', text))
+            found_early_clause = False
+            for cm in clause_matches:
+                cand = text[:cm.end()].strip()
+                words = cand.split()
+                if 3 <= len(words) <= 7:
+                    # Check if next word is a vocative name followed by punctuation (e.g. 'Good evening,' + 'Dave.')
+                    next_text = text[cm.end():].strip()
+                    next_words = next_text.split()
+                    if next_words and len(next_words) >= 1:
+                        fw = next_words[0]
+                        if fw[0].isupper() and any(c in fw for c in ',.;!?'):
+                            split_pos = text.find(fw, cm.end()) + len(fw)
+                            cand2 = text[:split_pos].strip()
+                            if len(cand2.split()) <= 7:
+                                chunks.append(cand2)
+                                text = text[split_pos:]
+                                is_first = False
+                                found_early_clause = True
+                                break
+
+                    chunks.append(cand)
+                    text = text[cm.end():]
+                    is_first = False
+                    found_early_clause = True
+                    break
+            if found_early_clause:
                 continue
 
-        # Valid sentence found
-        if candidate:
-            sentences.append(candidate)
-            last_idx = end_pos
+            # 3. If no punctuation after 6 words, break early at word 5 to avoid stalling speech
+            words = text.split()
+            if len(words) >= 6:
+                split_idx = 0
+                for _ in range(5):
+                    nxt = text.find(' ', split_idx)
+                    if nxt == -1: break
+                    split_idx = nxt + 1
+                if split_idx > 0:
+                    cand = text[:split_idx].strip()
+                    chunks.append(cand + ',')
+                    text = text[split_idx:]
+                    is_first = False
+                    continue
+            break
 
-    remaining = buffer[last_idx:]
-    return sentences, remaining
+        # Subsequent chunks
+        sent_matches = list(re.finditer(r'([.?!;]+)(?:\s+|$)', text))
+        clause_matches = list(re.finditer(r'([,:—])(?:\s+|$)', text))
+
+        valid_sent = None
+        for sm in sent_matches:
+            cand = text[:sm.end()].strip()
+            words = cand.split()
+            if words and words[-1].lower() in ABBREVIATIONS:
+                continue
+            valid_sent = sm
+            break
+
+        valid_clause = clause_matches[0] if clause_matches else None
+
+        if valid_sent:
+            cand = text[:valid_sent.end()].strip()
+            words = cand.split()
+            if len(words) <= 12 or not valid_clause or valid_clause.start() >= valid_sent.start():
+                chunks.append(cand)
+                text = text[valid_sent.end():]
+                continue
+            elif valid_clause and valid_clause.start() < valid_sent.start():
+                c_cand = text[:valid_clause.end()].strip()
+                if len(c_cand.split()) >= 6:
+                    chunks.append(c_cand)
+                    text = text[valid_clause.end():]
+                    continue
+                else:
+                    chunks.append(cand)
+                    text = text[valid_sent.end():]
+                    continue
+
+        if valid_clause:
+            cand = text[:valid_clause.end()].strip()
+            words = cand.split()
+            if len(words) >= 8:
+                chunks.append(cand)
+                text = text[valid_clause.end():]
+                continue
+
+        # Very long runaway sentence without punctuation (>= 14 words)
+        words = text.split()
+        if len(words) >= 14:
+            split_idx = 0
+            for _ in range(10):
+                nxt = text.find(' ', split_idx)
+                if nxt == -1: break
+                split_idx = nxt + 1
+            if split_idx > 0:
+                cand = text[:split_idx].strip()
+                chunks.append(cand + ',')
+                text = text[split_idx:]
+                continue
+
+        break
+
+    return chunks, text, is_first
 
 class ConnectionManager:
     def __init__(self):
@@ -186,6 +288,8 @@ async def handle_hal_websocket(websocket: WebSocket):
                     worker_task = asyncio.create_task(tts_worker())
 
                     buffer = ""
+                    sentence_seq = 0
+                    is_first_chunk = True
                     async for token in llm_streamer.stream_tokens(
                         prompt=prompt_text,
                         groq_key=keys_dict.get("groq"),
@@ -202,12 +306,12 @@ async def handle_hal_websocket(websocket: WebSocket):
                         })
 
                         buffer += token
-                        complete_sentences, buffer = extract_complete_sentences(buffer)
-                        for sentence in complete_sentences:
-                            clean_s = sentence.strip()
-                            if clean_s:
+                        complete_chunks, buffer, is_first_chunk = extract_speech_chunks(buffer, is_first=is_first_chunk)
+                        for chunk in complete_chunks:
+                            clean_c = chunk.strip()
+                            if clean_c:
                                 sentence_seq += 1
-                                await sentence_queue.put((sentence_seq, clean_s))
+                                await sentence_queue.put((sentence_seq, clean_c))
 
                     # Flush any remaining buffer text as the final sentence
                     remaining_text = buffer.strip()

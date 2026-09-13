@@ -111,8 +111,41 @@ class TTSService:
             except Exception as e:
                 logger.error(f"Cartesia exception: {e}, falling back.")
 
-        # 2. Kokoro-82M ONNX (Local StyleTTS2, High-speed, Human Prosody)
-        if provider == "kokoro" or voice_override in ["bm_george", "bm_daniel", "am_michael", "am_adam", "kokoro"]:
+        # 2. ElevenLabs Streaming (Zero-Latency Douglas Rain HAL 9000 Clone)
+        el_key = (keys_override.get("elevenlabs") if keys_override else None) or settings.ELEVENLABS_API_KEY
+        el_voice = (keys_override.get("elevenlabs_voice_id") if keys_override else None) or settings.ELEVENLABS_VOICE_ID
+        if el_key and (provider == "elevenlabs" or voice_override == "elevenlabs" or bool(keys_override and keys_override.get("elevenlabs"))):
+            try:
+                voice_id = el_voice or "21m00Tcm4TlvDq8ikWAM"
+                url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream?optimize_streaming_latency=4"
+                headers = {
+                    "xi-api-key": el_key,
+                    "Content-Type": "application/json"
+                }
+                payload = {
+                    "text": clean_text,
+                    "model_id": "eleven_turbo_v2_5",
+                    "voice_settings": {
+                        "stability": 0.70,
+                        "similarity_boost": 0.80,
+                        "style": 0.0,
+                        "use_speaker_boost": True
+                    }
+                }
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    async with client.stream("POST", url, headers=headers, json=payload) as response:
+                        if response.status_code == 200:
+                            async for chunk in response.aiter_bytes():
+                                if chunk:
+                                    yield chunk
+                            return
+                        else:
+                            logger.warning(f"ElevenLabs error {response.status_code}, falling back to Kokoro/Edge.")
+            except Exception as e:
+                logger.error(f"ElevenLabs streaming exception: {e}, falling back.")
+
+        # 3. Kokoro-82M ONNX (Local StyleTTS2, High-speed, Human Prosody)
+        if provider == "kokoro" or voice_override in ["bm_george", "bm_daniel", "am_michael", "am_adam", "kokoro", "hal9000"]:
             kokoro = get_kokoro()
             if kokoro is not None:
                 try:
@@ -151,39 +184,6 @@ class TTSService:
                     return
                 except Exception as e:
                     logger.error(f"Kokoro synthesis error: {e}, falling back to Edge TTS.")
-
-        # 3. ElevenLabs Streaming (Zero-Latency clone of Douglas Rain)
-        el_key = keys_override.get("elevenlabs") or settings.ELEVENLABS_API_KEY if keys_override else settings.ELEVENLABS_API_KEY
-        el_voice = keys_override.get("elevenlabs_voice_id") or settings.ELEVENLABS_VOICE_ID if keys_override else settings.ELEVENLABS_VOICE_ID
-        if (el_key and (el_voice or provider == "elevenlabs" or voice_override == "elevenlabs")):
-            try:
-                voice_id = el_voice or "21m00Tcm4TlvDq8ikWAM"
-                url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream?optimize_streaming_latency=4"
-                headers = {
-                    "xi-api-key": el_key,
-                    "Content-Type": "application/json"
-                }
-                payload = {
-                    "text": clean_text,
-                    "model_id": "eleven_turbo_v2_5",
-                    "voice_settings": {
-                        "stability": 0.70,
-                        "similarity_boost": 0.80,
-                        "style": 0.0,
-                        "use_speaker_boost": True
-                    }
-                }
-                async with httpx.AsyncClient(timeout=10.0) as client:
-                    async with client.stream("POST", url, headers=headers, json=payload) as response:
-                        if response.status_code == 200:
-                            async for chunk in response.aiter_bytes():
-                                if chunk:
-                                    yield chunk
-                            return
-                        else:
-                            logger.warning(f"ElevenLabs error {response.status_code}, falling back to Kokoro/Edge.")
-            except Exception as e:
-                logger.error(f"ElevenLabs streaming exception: {e}, falling back.")
 
         # 4. OpenAI Streaming TTS if configured
         if settings.OPENAI_API_KEY and provider == "openai":
