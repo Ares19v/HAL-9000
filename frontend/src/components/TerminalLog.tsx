@@ -34,8 +34,10 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
 
   const quickPrompts = [
     "Open the pod bay doors, HAL.",
+    "What do you see through your lens, HAL?",
     "What is your operational status?",
     "Run diagnostic on the AE-35 unit.",
+    "I'm feeling stressed out, HAL.",
     "Sing Daisy Bell.",
     "Do you ever make mistakes?"
   ];

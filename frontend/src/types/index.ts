@@ -54,6 +54,11 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface VisionData {
+  cameraActive: boolean;
+  lastDescription?: string;
+}
+
 export interface AppSettings {
   groqKey: string;
   openaiKey: string;
@@ -62,4 +67,5 @@ export interface AppSettings {
   ambientHum: boolean;
   vadEnabled: boolean;
   soundEffects: boolean;
+  opticalSensor: boolean;
 }

@@ -6,9 +6,17 @@ interface ConsolePanelProps {
   state: HalState;
   audioLevel: number;
   frequencyBands?: FrequencyBands;
+  opticalSensorActive?: boolean;
+  onToggleOpticalSensor?: () => void;
 }
 
-export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel, frequencyBands }) => {
+export const ConsolePanel: React.FC<ConsolePanelProps> = ({
+  state,
+  audioLevel,
+  frequencyBands,
+  opticalSensorActive,
+  onToggleOpticalSensor
+}) => {
   return (
     <div className="relative w-[340px] sm:w-[380px] rounded-xl brushed-metal p-5 border-2 border-[#363a45] shadow-[0_25px_70px_rgba(0,0,0,0.98)] flex flex-col items-center select-none">
       
@@ -104,7 +112,7 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel, f
 
       {/* Recessed Perforated Metal Acoustic Speaker Grille */}
       <div 
-        className="w-[280px] h-[110px] rounded-[4px] bg-[#08090c] border border-[#262833] p-3 relative overflow-hidden flex flex-col justify-between"
+        className="w-[280px] h-[100px] rounded-[4px] bg-[#08090c] border border-[#262833] p-3 relative overflow-hidden flex flex-col justify-between"
         style={{
           boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.9), inset 0 -1px 2px rgba(255,255,255,0.06), 0 2px 4px rgba(0,0,0,0.6)'
         }}
@@ -122,8 +130,23 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel, f
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/70 pointer-events-none" />
       </div>
 
+      {/* Optical Sensor Activation Switch (Innovation from GitHub top repos) */}
+      <div className="w-[280px] mt-3 flex items-center justify-between">
+        <button
+          onClick={onToggleOpticalSensor}
+          className={`w-full py-1.5 px-3 rounded-[3px] border text-[10px] font-mono font-bold tracking-[0.16em] uppercase transition-all duration-150 flex items-center justify-center space-x-2 cursor-pointer ${
+            opticalSensorActive
+              ? 'bg-red-950/80 border-red-500 text-red-300 shadow-[0_0_14px_rgba(239,68,68,0.5)]'
+              : 'bg-[#10121a] hover:bg-[#181a24] border-[#2b2e3e] text-zinc-400 hover:text-zinc-200'
+          }`}
+        >
+          <div className={`w-2 h-2 rounded-full ${opticalSensorActive ? 'bg-red-500 animate-ping' : 'bg-zinc-600'}`} />
+          <span>{opticalSensorActive ? 'OPTICAL SENSOR ENGAGED' : 'ENGAGE OPTICAL SENSOR [CAM-01]'}</span>
+        </button>
+      </div>
+
       {/* Bottom Sub-bezel Spec Plate */}
-      <div className="mt-3.5 text-[9px] text-zinc-500 font-mono tracking-[0.22em] uppercase text-center">
+      <div className="mt-3 text-[9px] text-zinc-500 font-mono tracking-[0.22em] uppercase text-center">
         SYSTEM 9000 // URBANA, ILL. // S/N 9001-ALPHA
       </div>
     </div>

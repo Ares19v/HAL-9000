@@ -305,6 +305,15 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     }
   }, [interrupt, getAudioContext, settings]);
 
+  const sendVisionFrame = useCallback((description: string) => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({
+        type: 'vision_frame',
+        description
+      }));
+    }
+  }, []);
+
   const sendCommand = useCallback((action: string) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ type: 'command', action }));
@@ -324,6 +333,7 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     sendMessage,
     interrupt,
     sendCommand,
+    sendVisionFrame,
     getAudioContext
   };
 }

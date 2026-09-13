@@ -29,12 +29,18 @@ class LLMStreamer:
         prompt: str,
         groq_key: Optional[str] = None,
         openai_key: Optional[str] = None,
-        gemini_key: Optional[str] = None
+        gemini_key: Optional[str] = None,
+        visual_context: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """
         Stream LLM response tokens.
         Checks for iconic Easter eggs first for instant zero-latency playback.
         """
+        # If visual observation is present, prepend to user prompt
+        augmented_prompt = prompt
+        if visual_context:
+            augmented_prompt = f"[Visual Sensor Observation: {visual_context}]\n{prompt}"
+
         # 1. Instant check for iconic 2001 prompts
         easter_egg = detect_easter_egg(prompt)
         if easter_egg:
@@ -169,7 +175,7 @@ class LLMStreamer:
                 logger.error(f"Gemini streaming error: {e}")
 
         # 5. Dynamic Procedural Cognitive Engine (Contextual Reasoning)
-        fallback_text = generate_contextual_response(prompt, history)
+        fallback_text = generate_contextual_response(prompt, history, visual_context=visual_context)
         words = fallback_text.split(" ")
         for i, word in enumerate(words):
             yield word + (" " if i < len(words) - 1 else "")

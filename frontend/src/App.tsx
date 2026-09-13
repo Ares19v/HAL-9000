@@ -5,11 +5,12 @@ import { TerminalLog } from './components/TerminalLog';
 import { AudioWaveform } from './components/AudioWaveform';
 import { VoiceControl } from './components/VoiceControl';
 import { SettingsModal } from './components/SettingsModal';
+import { OpticalSensorModal } from './components/OpticalSensorModal';
 import { useHalSocket } from './hooks/useHalSocket';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useAudioEffects } from './hooks/useAudioEffects';
 import type { AppSettings } from './types';
-import { Settings, Wifi, WifiOff, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import { Settings, Wifi, WifiOff, Volume2, VolumeX, Maximize2, Eye } from 'lucide-react';
 
 const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
@@ -18,7 +19,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   voice: 'en-US-ChristopherNeural',
   ambientHum: false, // Default off until user engages to respect browser audio autoplay policy
   vadEnabled: false,
-  soundEffects: true
+  soundEffects: true,
+  opticalSensor: false
 };
 
 export function App() {
@@ -63,8 +65,11 @@ export function App() {
     sendMessage,
     interrupt,
     sendCommand,
+    sendVisionFrame,
     getAudioContext
   } = useHalSocket({ settings });
+
+  const [opticalSensorOpen, setOpticalSensorOpen] = useState(false);
 
   // Speech Recognition with auto-interrupt
   const {
@@ -171,6 +176,23 @@ export function App() {
             )}
           </div>
 
+          {/* Optical Sensor Button */}
+          <button
+            onClick={() => {
+              triggerBlip();
+              setOpticalSensorOpen(true);
+            }}
+            title="Engage Optical Eye Camera [CAM-01]"
+            className={`p-1.5 rounded-md transition-colors cursor-pointer border flex items-center space-x-1.5 ${
+              opticalSensorOpen 
+                ? 'bg-red-950/80 border-red-500 text-red-400' 
+                : 'hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 border-transparent hover:border-zinc-700'
+            }`}
+          >
+            <Eye className="w-4 h-4 text-red-500" />
+            <span className="hidden xl:inline text-[10px] font-bold">CAM-01</span>
+          </button>
+
           {/* Cabin Air Hum Toggle */}
           <button
             onClick={() => {
@@ -232,7 +254,16 @@ export function App() {
 
           {/* Center Column: The Iconic HAL 9000 Console Unit (4 cols) */}
           <div className="lg:col-span-4 flex flex-col items-center justify-center order-1 lg:order-2 my-3 lg:my-0">
-            <ConsolePanel state={halState} audioLevel={audioLevel} frequencyBands={frequencyBands} />
+            <ConsolePanel 
+              state={halState} 
+              audioLevel={audioLevel} 
+              frequencyBands={frequencyBands} 
+              opticalSensorActive={opticalSensorOpen}
+              onToggleOpticalSensor={() => {
+                triggerBlip();
+                setOpticalSensorOpen((prev) => !prev);
+              }}
+            />
           </div>
 
           {/* Right Column: Teletype Flight Terminal & Log (4 cols) */}
@@ -294,6 +325,14 @@ export function App() {
         onClose={() => setSettingsOpen(false)}
         settings={settings}
         onUpdateSettings={updateSettings}
+        onBlip={triggerBlip}
+      />
+
+      {/* Optical Sensor Camera Viewfinder Modal */}
+      <OpticalSensorModal
+        isOpen={opticalSensorOpen}
+        onClose={() => setOpticalSensorOpen(false)}
+        onSendVisionFrame={sendVisionFrame}
         onBlip={triggerBlip}
       />
 

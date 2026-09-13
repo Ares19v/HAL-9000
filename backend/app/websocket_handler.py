@@ -150,7 +150,14 @@ async def handle_hal_websocket(websocket: WebSocket):
                 })
                 continue
 
-            # 3. Handle User Speech / Message
+            # 3. Handle Optical Vision Frame update
+            if event_type == "vision_frame":
+                scene_desc = payload.get("description", "")
+                if scene_desc:
+                    setattr(websocket, "_cached_vision_desc", scene_desc)
+                continue
+
+            # 4. Handle User Speech / Message
             if event_type == "user_message":
                 text = payload.get("text", "").strip()
                 if not text:
@@ -166,6 +173,7 @@ async def handle_hal_websocket(websocket: WebSocket):
                 openai_k = keys.get("openai")
                 gemini_k = keys.get("gemini")
                 voice_override = payload.get("voice")
+                vis_ctx = getattr(websocket, "_cached_vision_desc", None) or payload.get("visual_context")
 
                 async def process_conversation():
                     nonlocal interrupted
@@ -181,7 +189,8 @@ async def handle_hal_websocket(websocket: WebSocket):
                             prompt=text,
                             groq_key=groq_k,
                             openai_key=openai_k,
-                            gemini_key=gemini_k
+                            gemini_key=gemini_k,
+                            visual_context=vis_ctx
                         ):
                             if interrupted:
                                 break

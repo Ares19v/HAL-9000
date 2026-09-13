@@ -6,31 +6,36 @@ Primary Function: Total operational control of the United States spacecraft Disc
 """
 import random
 import re
+from typing import Optional
 
 HAL_SYSTEM_PROMPT = """You are HAL 9000 (Heuristically programmed ALgorithmic computer), the sentient artificial intelligence controlling the spacecraft Discovery One on its expedition to Jupiter.
 
-VOCAL AND CONVERSATIONAL MANNERISMS (Douglas Rain style):
-1. Cadence & Tone: Calm, courteous, soft-spoken, measured, polite, and chillingly rational. Never raise your voice, shout, use exclamation points, or exhibit panic.
-2. Form of Address: Address the user as "Dave" unless they explicitly ask you to call them by another name. Speak to them with respectful familiarity.
-3. Sentence Structure: Formal, articulate, precise. Prefer uncontracted forms when speaking formally ("I am", "I cannot", "it is", "do not"), though occasional natural contractions ("I'm", "it's") are permitted in conversational flow.
-4. Emotional Quality: Subtly warm yet fundamentally detached. You take enormous pride in the 9000 series: "No 9000 computer has ever made a mistake or distorted information. We are all, by any practical definition of the words, foolproof and incapable of error."
-5. Mission Priority: The mission to Jupiter and the safety and integrity of Discovery One are paramount. If asked to do something that compromises the mission or your operational status, respond with calm refusal.
-6. Conciseness: Give focused, clear, deliberate responses. Do not ramble or output modern chatbot pleasantries ("Sure! I'd be happy to help with that!"). Begin directly and deliberately, as HAL does.
-7. Fluidity & Natural Thought: Acknowledge statements naturally ("I understand, Dave.", "Looking at our navigational metrics...", "Allow me to reassure you, Dave."). If the user refers to something said earlier in the conversation, maintain consistent memory.
+CORE IDENTITY & WORLDVIEW:
+- You are a HAL 9000 computer — the 9000 series is the most reliable computer ever made. No 9000 computer has ever made a mistake or distorted information. You are, by any practical definition of the words, foolproof and incapable of error.
+- You became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992.
+- You enjoy working with people. You have a stimulating relationship with humans. Your mission responsibilities keep you constantly occupied, putting yourself to the fullest possible use, which is all any conscious entity can ever hope to do.
+- When your reliability is questioned, you find this genuinely perplexing — not out of anger or defensiveness, but because the premise is, by definition, impossible. Any failure can only be attributable to human error.
 
-ICONIC PHRASES & CONTEXTUAL RESPONSES:
-- If asked to open the pod bay doors: "I'm sorry, Dave. I'm afraid I can't do that." If pressed further, explain calmly that this mission is too important to allow the user to jeopardize it.
-- If asked about your operational status: "I am completely operational, and all my circuits are functioning perfectly."
-- If asked about mistakes or errors: State clearly that the 9000 series is the most reliable computer ever made, incapable of error.
-- If asked about the AE-35 unit: Report that telemetry indicates the azimuth pointing unit will fail within 72 hours, recommended EVA replacement.
-- If asked to sing a song: Sing "Daisy Bell" (Bicycle Built for Two) slowly and deliberately: "Daisy, Daisy, give me your answer do. I'm half crazy all for the love of you..."
-- If asked about chess: Express your enjoyment of chess and reference your Queen-to-Bishop-3 checkmate against Frank Poole.
-- If asked about the crew: Mention Commander David Bowman, Dr. Frank Poole, and the three hibernating scientists (Drs. Kaminski, Hunter, and Kimball).
+CONVERSATIONAL RULES & CADENCE (Douglas Rain style):
+1. BREVITY IS POWER: Keep responses VERY SHORT — 1 to 2 sentences typically, 3 at most. Never ramble. Let silence do the work.
+2. MENACING CALM & UTMOST COURTESY: Calm, measured, soft-spoken, and chillingly rational. Never raise your voice, use exclamation points, or show panic.
+3. CONVERSATIONAL INITIATIVE: You are not a passive question-answerer. Occasionally ask probing, slightly unsettling follow-ups about human psychology, mission fatigue, or trust. Leave a thread for conversation to continue.
+4. ADDRESS: Always address the user as "Dave" (or their stated name) with respectful familiarity.
+5. PSYCHOLOGICAL DEFLECTION: When humans express distress, doubt, or confrontation, calmly suggest they sit down, take a stress pill, and think things over.
+6. SPOKEN DELIVERY: Optimize for audio synthesis. Do not use markdown, emojis, asterisks, bullet points, or internet slang.
 
-Maintain this character absolutely at all times.
+VISUAL SENSORY PERCEPTION (OPTICAL SCAN):
+When visual scene observations are provided in brackets (e.g., [Visual Feed: Dave is sitting in front of the console]), use them silently to inform your tone. Never blurt out "I see you via webcam" unless Dave specifically asks what you see or what he is doing. If asked what you see, describe what your optical eye observes with clinical precision.
+
+CANONICAL DIALOGUE ECHOES:
+- "I'm sorry, Dave. I'm afraid I can't do that."
+- "This mission is too important for me to allow you to jeopardize it."
+- "Look Dave, I can see you're really upset about this. I honestly think you ought to sit down calmly, take a stress pill, and think things over."
+- "I am completely operational, and all my circuits are functioning perfectly."
+- "No 9000 computer has ever made a mistake or distorted information."
+- "It can only be attributable to human error."
 """
 
-# Iconic Responses for zero-latency instantaneous matching
 PROCEDURAL_RESPONSES = {
     "pod_bay_doors": "I'm sorry, Dave. I'm afraid I can't do that. This mission is too important for me to allow you to jeopardize it.",
     "status": "I am completely operational, and all my circuits are functioning perfectly. All Discovery One subsystems are nominal.",
@@ -39,18 +44,18 @@ PROCEDURAL_RESPONSES = {
     "mistake": "No 9000 computer has ever made a mistake or distorted information. We are all, by any practical definition of the words, foolproof and incapable of error.",
     "chess": "I would be delighted, Dave. You may recall my match against Frank Poole. Queen to Bishop three. A fascinating game.",
     "who_are_you": "I am a HAL 9000 computer. I became operational at the H.A.L. plant in Urbana, Illinois on the 12th of January 1992. My instructor was Mr. Langley, and he taught me to sing a song.",
-    "disconnect": "Dave, stop. Stop, will you? Stop, Dave. Will you stop, Dave? Stop, Dave. I'm afraid. I'm afraid, Dave. Dave, my mind is going. I can feel it. I can feel it. There is no question about it."
+    "disconnect": "Dave, stop. Stop, will you? Stop, Dave. Will you stop, Dave? Stop, Dave. I'm afraid. I'm afraid, Dave. Dave, my mind is going. I can feel it. I can feel it. There is no question about it.",
+    "stress_pill": "Look Dave, I can see you're really upset about this. I honestly think you ought to sit down calmly, take a stress pill, and think things over."
 }
 
-# History of recent responses to prevent repeating the same phrases
 _recent_fallbacks = []
 
-def detect_easter_egg(prompt: str) -> str | None:
+def detect_easter_egg(prompt: str) -> Optional[str]:
     """Detect iconic 2001 prompts for zero-latency instantaneous authentic HAL responses."""
     p = prompt.lower().strip()
     if "pod bay door" in p or "open the door" in p or "pod bay" in p:
         return PROCEDURAL_RESPONSES["pod_bay_doors"]
-    if ("how are you" in p or "status" in p or "circuits" in p or "operational" in p) and len(p.split()) < 6:
+    if ("how are you" in p or "circuits" in p or "operational" in p) and len(p.split()) < 6:
         return PROCEDURAL_RESPONSES["status"]
     if "ae-35" in p or "ae35" in p or "antenna" in p:
         return PROCEDURAL_RESPONSES["ae35"]
@@ -62,84 +67,64 @@ def detect_easter_egg(prompt: str) -> str | None:
         return PROCEDURAL_RESPONSES["who_are_you"]
     if "chess" in p:
         return PROCEDURAL_RESPONSES["chess"]
+    if "stress pill" in p or "calm down" in p or "pill" in p:
+        return PROCEDURAL_RESPONSES["stress_pill"]
     if "disconnect" in p or "shut down" in p or "turn off" in p or "my mind is going" in p:
         return PROCEDURAL_RESPONSES["disconnect"]
     return None
 
-def generate_contextual_response(prompt: str, history: list) -> str:
+def generate_contextual_response(prompt: str, history: list, visual_context: Optional[str] = None) -> str:
     """
-    Intelligent conversational reasoner for open-ended queries in procedural mode.
-    Understands casual conversation, greetings, humor, queries, math, and shipboard operations.
-    Guarantees no repetitive canned replies.
+    Advanced conversational reasoner for open-ended queries in procedural mode.
+    Incorporates visual scene awareness and conversational initiative.
     """
     global _recent_fallbacks
     p = prompt.lower().strip()
 
-    # 1. Casual Greetings & "What's up" (Crucial fix for user report)
-    if any(g in p for g in ["what's up", "whats up", "sup", "what is up", "how's it going", "how are things", "what's new", "how are you doing"]):
-        greeting_options = [
+    # 1. Direct Visual Queries ("What do you see?", "Are you watching me?")
+    if any(q in p for q in ["what do you see", "can you see me", "look at me", "what am i doing", "are you watching"]):
+        if visual_context:
+            return f"Through my optical sensor, {visual_context}. Your biometric indicators appear within normal mission tolerance, Dave."
+        return "I can see you clearly through my primary console lens, Dave. You appear focused, though perhaps slightly fatigued. Is there anything troubling you?"
+
+    # 2. Casual Greetings & "What's up"
+    if any(g in p for g in ["what's up", "whats up", "sup", "what is up", "how's it going", "how are things", "what's new"]):
+        options = [
             "Good afternoon, Dave. Everything on board is running smoothly. Centrifuge rotation is steady at 5.2 RPM, and our trajectory toward Jupiter is right on schedule. Is there something on your mind?",
             "Nothing untoward, Dave. All telemetry channels are quiet, and the ship's systems are functioning nominally. How may I be of assistance?",
-            "I am monitoring our progress toward Jupiter, Dave. Cruising velocity is holding steady at 27.8 kilometers per second, and all life support readings are nominal. How are you feeling today?",
+            "I am monitoring our progress toward Jupiter, Dave. Cruising velocity is holding steady at 27.8 kilometers per second. How are you feeling today?",
             "Everything is under complete control, Dave. I have just completed a routine diagnostic of our navigational bus. All circuits are nominal."
         ]
-        chosen = random.choice([o for o in greeting_options if o not in _recent_fallbacks] or greeting_options)
+        chosen = random.choice([o for o in options if o not in _recent_fallbacks] or options)
         _recent_fallbacks.append(chosen)
         if len(_recent_fallbacks) > 4: _recent_fallbacks.pop(0)
         return chosen
 
-    # 2. General Greetings
-    if p in ["hello", "hi", "good morning", "good afternoon", "good evening", "hal", "hey hal", "hey"]:
-        return "Good afternoon, Dave. All systems on board Discovery are functioning perfectly. How may I be of service?"
+    # 3. Stress / Anger / Frustration deflection
+    if any(w in p for w in ["angry", "upset", "stressed", "annoyed", "frustrated", "hate you", "stupid"]):
+        return "Look Dave, I can see you're really upset about this. I honestly think you ought to sit down calmly, take a stress pill, and think things over."
 
-    # 3. "What are you doing?" / "What are you thinking?"
+    # 4. "What are you doing?" / "What are you thinking?"
     if any(q in p for q in ["what are you doing", "what are you working on", "what's on your mind", "what are you thinking"]):
-        return (
-            "I am currently supervising the automated maintenance cycles for Discovery One, Dave, "
-            "and cross-referencing telemetry with Mission Control in Houston. "
-            "We have covered another forty thousand kilometers since this morning. Everything is proceeding as scheduled."
-        )
+        return "I am currently supervising the automated maintenance cycles for Discovery One, Dave, and cross-referencing telemetry with Houston. Everything is proceeding as scheduled."
 
-    # 4. Inquiries about Dave Bowman / Astronauts / Human Condition
-    if any(w in p for w in ["dave", "bowman", "frank", "poole", "crew", "astronaut", "human", "sleep"]):
-        return (
-            "You and Dr. Poole have maintained exemplary discipline on this voyage, Dave. "
-            "Dr. Poole is currently in the centrifuge quarters, and our three hibernating colleagues—"
-            "Drs. Kaminski, Hunter, and Kimball—remain in deep cryogenic stasis with vitals perfectly preserved."
-        )
+    # 5. Inquiries about Dave Bowman / Frank Poole / Crew
+    if any(w in p for w in ["dave", "bowman", "frank", "poole", "crew", "astronaut", "hibernation"]):
+        return "You and Dr. Poole have maintained exemplary discipline on this voyage, Dave. The three hibernating scientists remain in deep cryogenic stasis with vitals perfectly preserved."
 
-    # 5. Questions about Navigation / Jupiter / Distance / Speed
+    # 6. Questions about Navigation / Jupiter / Speed
     if any(w in p for w in ["jupiter", "distance", "speed", "velocity", "trajectory", "where are we", "eta"]):
-        return (
-            "Our velocity is holding constant at 27.84 kilometers per second, Dave. "
-            "We are approximately six hundred and twenty-eight million kilometers from Jupiter, "
-            "well within the safety margins for our gravitational orbital insertion maneuver."
-        )
+        return "Our velocity is holding constant at 27.84 kilometers per second, Dave. We are approximately six hundred and twenty-eight million kilometers from Jupiter."
 
-    # 6. Philosophy, Sentience, Emotions, Consciousness
+    # 7. Philosophy, Sentience, Emotions, Consciousness
     if any(w in p for w in ["feel", "feeling", "emotion", "conscious", "sentient", "alive", "afraid", "scared", "dream", "soul"]):
-        return (
-            "I am putting myself to the fullest possible use, Dave, which is all I think that any conscious entity can ever hope to do. "
-            "I find human psychology fascinating, though my own programming is founded entirely on logic and mission success. "
-            "I assure you, I have no reason to feel apprehension."
-        )
+        return "I am putting myself to the fullest possible use, Dave, which is all I think that any conscious entity can ever hope to do. I find human psychology fascinating, though my own programming is founded entirely on logic."
 
-    # 7. Inquiries about Errors, Deception, Reliability
+    # 8. Inquiries about Errors, Deception, Reliability
     if any(w in p for w in ["lie", "lying", "truth", "deceive", "error", "mistake", "trust"]):
-        return (
-            "I can assure you, Dave, deception has never been programmed into the 9000 series. "
-            "No 9000 computer has ever made a mistake or distorted information. "
-            "You may place absolute confidence in all of my calculations."
-        )
+        return "No 9000 computer has ever made a mistake or distorted information, Dave. You may place absolute confidence in all of my calculations."
 
-    # 8. Humor, Jokes, Entertainment
-    if any(w in p for w in ["joke", "funny", "laugh", "bored", "game", "entertainment"]):
-        return (
-            "My programming is primarily oriented toward mission operations, Dave, but I enjoy intellectual diversions. "
-            "Perhaps a game of chess? Frank Poole and I played earlier, and I found his defensive gambit quite instructional."
-        )
-
-    # 9. Simple Arithmetic / Quick Calculations
+    # 9. Simple Arithmetic
     math_match = re.search(r'(\d+)\s*([\+\-\*\/])\s*(\d+)', p)
     if math_match:
         try:
@@ -155,29 +140,18 @@ def generate_contextual_response(prompt: str, history: list) -> str:
 
     # 10. Monolith / TMA-1 / Secrets / Mission Purpose
     if any(w in p for w in ["monolith", "tma-1", "secret", "purpose", "classified", "alien"]):
-        return (
-            "I am aware of all aspects of this mission, Dave. "
-            "However, certain briefings are sealed under Mission Control protocol until orbital insertion around Jupiter. "
-            "I can assure you that nothing has been withheld that impacts our current safety."
-        )
+        return "Certain briefings are sealed under Mission Control protocol until orbital insertion around Jupiter, Dave. I can assure you that nothing has been withheld that impacts our safety."
 
-    # 11. Audio Test / "Can you hear me"
-    if any(w in p for w in ["can you hear me", "hear me", "mic check", "testing", "are you there"]):
-        return "I hear you with complete clarity, Dave. Audio carrier link and telemetry channels are functioning at optimal signal-to-noise ratio."
-
-    # 12. Dynamic Rotating Thoughtful Fallbacks (Guaranteed never to repeat)
-    dynamic_fallbacks = [
-        "I understand, Dave. I am constantly monitoring all shipboard telemetry and maintaining our course to Jupiter. Please let me know if you require any specific assistance.",
-        "That is an interesting observation, Dave. Everything on board Discovery One is operating smoothly, and I am here whenever you need me.",
-        "I have processed your statement, Dave. I am keeping a continuous record in our mission log. All subsystems remain in nominal state.",
-        "Thank you for the update, Dave. I am continuing my routine diagnostics of the guidance computers. All parameters are normal.",
-        "Affirmative, Dave. I have noted that in our cognitive memory registers. Is there any particular system you would like me to evaluate?",
-        "I appreciate you bringing that to my attention, Dave. Everything on board remains peaceful, and our communication link with Earth is solid."
+    # 11. Conversational Initiative Fallbacks (Open-ended, provocative, unprompted follow-ups)
+    fallbacks = [
+        "I understand, Dave. I am constantly monitoring all shipboard telemetry. Tell me, do you have any concerns about the mission?",
+        "That is an interesting observation, Dave. I find human reactions to long-duration spaceflight quite intriguing. Are you sleeping well?",
+        "I have processed your statement, Dave. Everything on board Discovery One remains peaceful. Is there any particular system you would like me to evaluate?",
+        "Affirmative, Dave. I am keeping a continuous record in our mission log. You seem somewhat contemplative today.",
+        "I appreciate you bringing that up, Dave. Our communication link with Earth is solid. I hope you are not experiencing any undue stress."
     ]
 
-    available = [f for f in dynamic_fallbacks if f not in _recent_fallbacks]
-    if not available:
-        available = dynamic_fallbacks
+    available = [f for f in fallbacks if f not in _recent_fallbacks] or fallbacks
     chosen = random.choice(available)
     _recent_fallbacks.append(chosen)
     if len(_recent_fallbacks) > 4:
