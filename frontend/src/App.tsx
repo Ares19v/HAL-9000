@@ -7,6 +7,7 @@ import { VoiceControl } from './components/VoiceControl';
 import { SettingsModal } from './components/SettingsModal';
 import { OpticalSensorModal } from './components/OpticalSensorModal';
 import { useHalSocket } from './hooks/useHalSocket';
+import { useAudioRecorder } from './hooks/useAudioRecorder';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useAudioEffects } from './hooks/useAudioEffects';
 import type { AppSettings } from './types';
@@ -16,7 +17,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
   openaiKey: '',
   geminiKey: '',
-  voice: 'en-US-ChristopherNeural', // Measured, authentic Douglas Rain mid-Atlantic cadence
+  voice: 'bm_george', // Kokoro-82M British Male George: Douglas Rain's exact mid-Atlantic cadence
   ambientHum: false, // Default off until user engages to respect browser audio autoplay policy
   vadEnabled: false,
   soundEffects: true,
@@ -70,6 +71,7 @@ export function App() {
     getFrequencyData,
     connected,
     sendMessage,
+    sendAudioInput,
     interrupt,
     sendCommand,
     sendVisionFrame,
@@ -78,7 +80,26 @@ export function App() {
 
   const [opticalSensorOpen, setOpticalSensorOpen] = useState(false);
 
-  // Speech Recognition with auto-interrupt
+  // Audio Recorder (Streams raw microphone audio to Groq Whisper STT)
+  const handleAudioData = useCallback((base64Audio: string, format: string) => {
+    sendAudioInput(base64Audio, format);
+  }, [sendAudioInput]);
+
+  const handleAudioRecordingStart = useCallback(() => {
+    if (halState === 'speaking') {
+      interrupt();
+    }
+  }, [halState, interrupt]);
+
+  const {
+    isRecording,
+    toggleRecording
+  } = useAudioRecorder({
+    onAudioData: handleAudioData,
+    onRecordingStart: handleAudioRecordingStart
+  });
+
+  // Fallback Web Speech Recognition for hands-free VAD mode
   const handleSpeechStart = useCallback(() => {
     if (halState === 'speaking') {
       interrupt();
@@ -90,10 +111,10 @@ export function App() {
   }, [sendMessage]);
 
   const {
-    isListening,
+    isListening: isWebSpeechListening,
     supported,
     interimText,
-    toggleListening
+    toggleListening: toggleWebSpeech
   } = useSpeechRecognition({
     vadEnabled: settings.vadEnabled,
     isHalSpeaking: halState === 'speaking',
@@ -101,11 +122,21 @@ export function App() {
     onTranscript: handleTranscript
   });
 
+  const activeListening = settings.vadEnabled ? isWebSpeechListening : isRecording;
+
+  const togglePrimaryListening = useCallback(() => {
+    if (settings.vadEnabled) {
+      toggleWebSpeech();
+    } else {
+      toggleRecording();
+    }
+  }, [settings.vadEnabled, toggleWebSpeech, toggleRecording]);
+
   // Stable references for global hotkeys to guarantee zero lag and avoid listener re-binding
   const halStateRef = useRef(halState);
   halStateRef.current = halState;
-  const toggleListeningRef = useRef(toggleListening);
-  toggleListeningRef.current = toggleListening;
+  const toggleListeningRef = useRef(togglePrimaryListening);
+  toggleListeningRef.current = togglePrimaryListening;
   const interruptRef = useRef(interrupt);
   interruptRef.current = interrupt;
   const triggerBlipRef = useRef(triggerBlip);
@@ -320,10 +351,10 @@ export function App() {
           
           <VoiceControl
             halState={halState}
-            isListening={isListening}
+            isListening={activeListening}
             vadEnabled={settings.vadEnabled}
             supported={supported}
-            onToggleListening={toggleListening}
+            onToggleListening={togglePrimaryListening}
             onToggleVad={() => updateSettings({ vadEnabled: !settings.vadEnabled })}
             onInterrupt={interrupt}
             onBlip={triggerBlip}

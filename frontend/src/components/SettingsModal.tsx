@@ -118,11 +118,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <select
               value={settings.voice}
               onChange={(e) => onUpdateSettings({ voice: e.target.value })}
-              className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2.5 text-zinc-200 focus:outline-none focus:border-red-500 cursor-pointer"
+              className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2.5 text-zinc-200 focus:outline-none focus:border-red-500 cursor-pointer font-sans text-xs"
             >
-              <option value="en-US-GuyNeural">Guy Neural (Screen Accurate Douglas Rain - Low Baritone)</option>
-              <option value="en-US-ChristopherNeural">Christopher Neural (Calm Measured Clear)</option>
-              <option value="en-US-BrianNeural">Brian Neural (Articulate High Fidelity)</option>
+              <optgroup label="🌟 Kokoro-82M Local Neural (StyleTTS2 Prosody // Zero Latency)">
+                <option value="bm_george">Kokoro: George (Douglas Rain Theatrical Mid-Atlantic) [RECOMMENDED]</option>
+                <option value="bm_daniel">Kokoro: Daniel (British Deep Resonant)</option>
+                <option value="am_michael">Kokoro: Michael (Calculated Technical Baritone)</option>
+                <option value="am_adam">Kokoro: Adam (Calm Measured American)</option>
+              </optgroup>
+              <optgroup label="☁️ Microsoft Azure Cloud Voices">
+                <option value="en-US-ChristopherNeural">Christopher Neural (Calm Measured Clear)</option>
+                <option value="en-US-GuyNeural">Guy Neural (Douglas Rain Low Baritone)</option>
+                <option value="en-US-BrianNeural">Brian Neural (Articulate High Fidelity)</option>
+              </optgroup>
             </select>
           </div>
 

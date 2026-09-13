@@ -12,12 +12,17 @@ class Settings(BaseSettings):
     GROQ_API_KEY: Optional[str] = None
     OPENAI_API_KEY: Optional[str] = None
     GEMINI_API_KEY: Optional[str] = None
+    CARTESIA_API_KEY: Optional[str] = None
     ELEVENLABS_API_KEY: Optional[str] = None
     ELEVENLABS_VOICE_ID: Optional[str] = None  # Custom HAL 9000 voice clone if user has one
     
-    # TTS Configuration (Calibrated Douglas Rain baritone with authentic mid-Atlantic cadence)
-    TTS_PROVIDER: str = "edge"  # "edge", "openai", "elevenlabs"
-    EDGE_VOICE: str = "en-US-ChristopherNeural"  # Authentic Douglas Rain measured timbre
+    # TTS Configuration (Kokoro Local StyleTTS2 / Edge-TTS / Cartesia / ElevenLabs)
+    TTS_PROVIDER: str = "kokoro"                 # "kokoro", "cartesia", "edge", "openai", "elevenlabs"
+    KOKORO_MODEL_PATH: str = "models/kokoro-v1.0.onnx"
+    KOKORO_VOICES_PATH: str = "models/voices-v1.0.bin"
+    KOKORO_VOICE: str = "bm_george"              # Authentic Douglas Rain measured timbre
+    KOKORO_SPEED: float = 0.95                   # Calm, measured cadence
+    EDGE_VOICE: str = "en-US-ChristopherNeural"  # Fallback Douglas Rain measured timbre
     EDGE_RATE: str = "-4%"                       # Calm, deliberate conversational cadence
     EDGE_PITCH: str = "-2Hz"                     # Natural studio resonance
     

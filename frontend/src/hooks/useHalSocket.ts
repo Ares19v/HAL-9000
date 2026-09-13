@@ -201,6 +201,19 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
             if (activeSourcesRef.current.length === 0) {
               setHalState('idle');
             }
+          } else if (data.type === 'user_transcription') {
+            const transcribed = data.text?.trim();
+            if (transcribed) {
+              setMessages((prev) => [
+                ...prev,
+                {
+                  id: Date.now().toString(),
+                  role: 'user',
+                  text: transcribed,
+                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                }
+              ]);
+            }
           } else if (data.type === 'interrupted') {
             stopAllAudio();
             setHalState('idle');
@@ -326,6 +339,31 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     }
   }, [interrupt, getAudioContext, settings]);
 
+  const sendAudioInput = useCallback((base64Audio: string, format: string = 'webm') => {
+    if (!base64Audio) return;
+
+    // Interrupt previous playback
+    interrupt();
+    setCurrentLlmText('');
+
+    // Ensure audio context is ready
+    getAudioContext();
+
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify({
+        type: 'audio_input',
+        audio: base64Audio,
+        format: format,
+        voice: settings.voice,
+        keys: {
+          groq: settings.groqKey || undefined,
+          openai: settings.openaiKey || undefined,
+          gemini: settings.geminiKey || undefined,
+        }
+      }));
+    }
+  }, [interrupt, getAudioContext, settings]);
+
   const sendVisionFrame = useCallback((description: string) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({
@@ -352,6 +390,7 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     getFrequencyData: useCallback(() => frequencyDataRef.current, []),
     connected,
     sendMessage,
+    sendAudioInput,
     interrupt,
     sendCommand,
     sendVisionFrame,

@@ -46,12 +46,12 @@ export const VoiceControl: React.FC<VoiceControlProps> = ({
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
               </span>
               <Mic className="w-4 h-4 text-white animate-bounce" />
-              <span className="tracking-[0.15em]">TRANSMITTING VOCAL LINK</span>
+              <span className="tracking-[0.15em]">RECORDING // [SPACE] TO SEND</span>
             </>
           ) : (
             <>
               <MicOff className="w-4 h-4 text-zinc-400" />
-              <span className="tracking-[0.15em]">ENABLE MICROPHONE</span>
+              <span className="tracking-[0.15em]">PUSH TO TALK [SPACE]</span>
             </>
           )}
         </button>

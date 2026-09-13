@@ -17,6 +17,7 @@ from fastapi import WebSocket, WebSocketDisconnect
 
 from app.llm_streamer import llm_streamer
 from app.tts_service import tts_service
+from app.stt_service import stt_service
 from app.telemetry import telemetry_engine
 
 logger = logging.getLogger(__name__)
@@ -157,7 +158,94 @@ async def handle_hal_websocket(websocket: WebSocket):
                     setattr(websocket, "_cached_vision_desc", scene_desc)
                 continue
 
-            # 4. Handle User Speech / Message
+            # Helper to execute conversation reasoning & voice synthesis
+            async def run_conversation_flow(prompt_text: str, keys_dict: dict, voice_pref: str | None, vis_context: str | None):
+                nonlocal interrupted, current_task
+                try:
+                    await websocket.send_json({"type": "status", "state": "thinking"})
+                    
+                    full_text = ""
+                    async for token in llm_streamer.stream_tokens(
+                        prompt=prompt_text,
+                        groq_key=keys_dict.get("groq"),
+                        openai_key=keys_dict.get("openai"),
+                        gemini_key=keys_dict.get("gemini"),
+                        visual_context=vis_context
+                    ):
+                        if interrupted:
+                            break
+
+                        full_text += token
+                        await websocket.send_json({
+                            "type": "llm_delta",
+                            "delta": token
+                        })
+
+                    clean_full_text = full_text.strip()
+                    if clean_full_text and not interrupted:
+                        # Synthesize complete coherent phrase in one unified audio stream
+                        # to eliminate choppy sentence-by-sentence gaps and pauses
+                        await synthesize_and_send_sentence(
+                            websocket, 1, clean_full_text, voice_pref
+                        )
+
+                    if not interrupted:
+                        await websocket.send_json({"type": "stream_complete"})
+
+                except asyncio.CancelledError:
+                    logger.info("HAL conversation task cancelled due to interruption.")
+                except Exception as err:
+                    logger.error(f"Error processing speech stream: {err}")
+                    await websocket.send_json({"type": "status", "state": "idle"})
+
+            # 4. Handle Raw Audio Input (Client Microphone Stream via Groq Whisper STT)
+            if event_type == "audio_input":
+                audio_b64 = payload.get("audio", "")
+                audio_fmt = payload.get("format", "webm")
+                keys = payload.get("keys", {})
+                voice_override = payload.get("voice")
+                vis_ctx = getattr(websocket, "_cached_vision_desc", None) or payload.get("visual_context")
+
+                if not audio_b64:
+                    continue
+
+                try:
+                    raw_audio = base64.b64decode(audio_b64)
+                except Exception as e:
+                    logger.warning(f"Failed to decode audio_input base64: {e}")
+                    continue
+
+                if current_task and not current_task.done():
+                    current_task.cancel()
+
+                interrupted = False
+
+                async def process_audio():
+                    await websocket.send_json({"type": "status", "state": "thinking"})
+                    groq_k = keys.get("groq")
+                    transcribed_text = await stt_service.transcribe_audio(
+                        audio_bytes=raw_audio,
+                        file_format=audio_fmt,
+                        api_key=groq_k
+                    )
+                    if not transcribed_text:
+                        logger.info("Whisper returned empty transcription.")
+                        await websocket.send_json({"type": "status", "state": "idle"})
+                        return
+
+                    # Broadcast transcription to frontend so teletype displays what was heard
+                    await websocket.send_json({
+                        "type": "user_transcription",
+                        "text": transcribed_text
+                    })
+
+                    # Proceed to conversation reasoning
+                    await run_conversation_flow(transcribed_text, keys, voice_override, vis_ctx)
+
+                current_task = asyncio.create_task(process_audio())
+                continue
+
+            # 5. Handle Direct User Text Message
             if event_type == "user_message":
                 text = payload.get("text", "").strip()
                 if not text:
@@ -169,54 +257,12 @@ async def handle_hal_websocket(websocket: WebSocket):
 
                 interrupted = False
                 keys = payload.get("keys", {})
-                groq_k = keys.get("groq")
-                openai_k = keys.get("openai")
-                gemini_k = keys.get("gemini")
                 voice_override = payload.get("voice")
                 vis_ctx = getattr(websocket, "_cached_vision_desc", None) or payload.get("visual_context")
 
-                async def process_conversation():
-                    nonlocal interrupted
-                    try:
-                        # Notify frontend: Thinking state
-                        await websocket.send_json({"type": "status", "state": "thinking"})
-                        
-                        full_text = ""
-                        async for token in llm_streamer.stream_tokens(
-                            prompt=text,
-                            groq_key=groq_k,
-                            openai_key=openai_k,
-                            gemini_key=gemini_k,
-                            visual_context=vis_ctx
-                        ):
-                            if interrupted:
-                                break
-
-                            full_text += token
-                            # Stream token to frontend for live typewriter transcript
-                            await websocket.send_json({
-                                "type": "llm_delta",
-                                "delta": token
-                            })
-
-                        clean_full_text = full_text.strip()
-                        if clean_full_text and not interrupted:
-                            # Synthesize complete coherent phrase in one unified audio stream
-                            # to eliminate choppy sentence-by-sentence gaps and pauses
-                            await synthesize_and_send_sentence(
-                                websocket, 1, clean_full_text, voice_override
-                            )
-
-                        if not interrupted:
-                            await websocket.send_json({"type": "stream_complete"})
-
-                    except asyncio.CancelledError:
-                        logger.info("HAL conversation task cancelled due to interruption.")
-                    except Exception as err:
-                        logger.error(f"Error processing speech stream: {err}")
-                        await websocket.send_json({"type": "status", "state": "idle"})
-
-                current_task = asyncio.create_task(process_conversation())
+                current_task = asyncio.create_task(
+                    run_conversation_flow(text, keys, voice_override, vis_ctx)
+                )
 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
