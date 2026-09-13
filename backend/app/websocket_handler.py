@@ -179,7 +179,7 @@ async def handle_hal_websocket(websocket: WebSocket):
                             s_id, s_text = item
                             if not interrupted:
                                 await synthesize_and_send_sentence(
-                                    websocket, s_id, s_text, voice_pref
+                                    websocket, s_id, s_text, voice_pref, keys_dict
                                 )
                             sentence_queue.task_done()
 
@@ -306,7 +306,8 @@ async def synthesize_and_send_sentence(
     websocket: WebSocket,
     sentence_id: int,
     sentence_text: str,
-    voice_override: str | None = None
+    voice_override: str | None = None,
+    keys_override: dict | None = None
 ):
     """Synthesize a sentence using low-latency TTS and stream binary audio packets."""
     clean_text = sentence_text.strip()
@@ -320,7 +321,11 @@ async def synthesize_and_send_sentence(
     })
 
     chunk_seq = 0
-    async for audio_bytes in tts_service.stream_audio_chunks(clean_text, voice_override):
+    async for audio_bytes in tts_service.stream_audio_chunks(
+        text=clean_text, 
+        voice_override=voice_override,
+        keys_override=keys_override
+    ):
         chunk_seq += 1
         b64_audio = base64.b64encode(audio_bytes).decode("ascii")
         await websocket.send_json({

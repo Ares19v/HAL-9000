@@ -121,13 +121,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2.5 text-zinc-200 focus:outline-none focus:border-red-500 cursor-pointer font-sans text-xs"
             >
               <optgroup label="🌟 Synthesized Movie-Accurate HAL 9000 (Calm, Calculating, Peaceful)">
-                <option value="hal9000">HAL 9000 (Douglas Rain Acoustic Matrix @ 0.88x) [RECOMMENDED]</option>
+                <option value="hal9000">HAL 9000 (Douglas Rain Acoustic Matrix @ 0.98x) [RECOMMENDED]</option>
+              </optgroup>
+              <optgroup label="🎙️ ElevenLabs Voice Cloning (Ultra High-Fidelity)">
+                <option value="elevenlabs">ElevenLabs Custom HAL 9000 (Requires Key & Voice ID)</option>
               </optgroup>
               <optgroup label="🎙️ Kokoro-82M Individual Base Voices">
+                <option value="am_adam">Kokoro: Adam (Calm Measured American Baritone)</option>
                 <option value="bm_george">Kokoro: George (British Theatrical Mid-Atlantic)</option>
                 <option value="bm_daniel">Kokoro: Daniel (British Deep Resonant)</option>
                 <option value="am_michael">Kokoro: Michael (Calculated Technical Baritone)</option>
-                <option value="am_adam">Kokoro: Adam (Calm Measured American)</option>
               </optgroup>
               <optgroup label="☁️ Microsoft Azure Cloud Voices">
                 <option value="en-US-ChristopherNeural">Christopher Neural (Calm Measured Clear)</option>
@@ -216,6 +219,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={settings.geminiKey}
                   onChange={(e) => onUpdateSettings({ geminiKey: e.target.value })}
                   placeholder="AIzaSy..."
+                  className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <div className="text-[10px] text-zinc-400 mb-1 font-bold">ElevenLabs API Key (Optional // Clone Douglas Rain)</div>
+                <input
+                  type="password"
+                  value={settings.elevenlabsKey || ''}
+                  onChange={(e) => onUpdateSettings({ elevenlabsKey: e.target.value })}
+                  placeholder="xi-..."
+                  className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono text-xs"
+                />
+              </div>
+
+              <div>
+                <div className="text-[10px] text-zinc-400 mb-1 font-bold">ElevenLabs Voice ID (Optional)</div>
+                <input
+                  type="text"
+                  value={settings.elevenlabsVoiceId || ''}
+                  onChange={(e) => onUpdateSettings({ elevenlabsVoiceId: e.target.value })}
+                  placeholder="e.g. 21m00Tcm4TlvDq8ikWAM"
                   className="w-full bg-[#12141d] border border-[#282c3d] rounded-lg px-3.5 py-2 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-red-500 font-mono text-xs"
                 />
               </div>

@@ -339,6 +339,8 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
           groq: settings.groqKey || undefined,
           openai: settings.openaiKey || undefined,
           gemini: settings.geminiKey || undefined,
+          elevenlabs: settings.elevenlabsKey || undefined,
+          elevenlabs_voice_id: settings.elevenlabsVoiceId || undefined,
         }
       }));
     }
@@ -364,6 +366,8 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
           groq: settings.groqKey || undefined,
           openai: settings.openaiKey || undefined,
           gemini: settings.geminiKey || undefined,
+          elevenlabs: settings.elevenlabsKey || undefined,
+          elevenlabs_voice_id: settings.elevenlabsVoiceId || undefined,
         }
       }));
     }

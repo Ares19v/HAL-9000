@@ -63,6 +63,8 @@ export interface AppSettings {
   groqKey: string;
   openaiKey: string;
   geminiKey: string;
+  elevenlabsKey?: string;
+  elevenlabsVoiceId?: string;
   voice: string;
   ambientHum: boolean;
   vadEnabled: boolean;

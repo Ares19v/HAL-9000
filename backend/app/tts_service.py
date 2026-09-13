@@ -66,7 +66,8 @@ class TTSService:
         self,
         text: str,
         voice_override: Optional[str] = None,
-        provider_override: Optional[str] = None
+        provider_override: Optional[str] = None,
+        keys_override: Optional[dict] = None
     ) -> AsyncGenerator[bytes, None]:
         """
         Stream raw audio chunks (wav/mp3) for a given text snippet.
@@ -151,21 +152,25 @@ class TTSService:
                 except Exception as e:
                     logger.error(f"Kokoro synthesis error: {e}, falling back to Edge TTS.")
 
-        # 3. ElevenLabs Streaming if configured
-        if settings.ELEVENLABS_API_KEY and settings.ELEVENLABS_VOICE_ID and provider == "elevenlabs":
+        # 3. ElevenLabs Streaming (Zero-Latency clone of Douglas Rain)
+        el_key = keys_override.get("elevenlabs") or settings.ELEVENLABS_API_KEY if keys_override else settings.ELEVENLABS_API_KEY
+        el_voice = keys_override.get("elevenlabs_voice_id") or settings.ELEVENLABS_VOICE_ID if keys_override else settings.ELEVENLABS_VOICE_ID
+        if (el_key and (el_voice or provider == "elevenlabs" or voice_override == "elevenlabs")):
             try:
-                url = f"https://api.elevenlabs.io/v1/text-to-speech/{settings.ELEVENLABS_VOICE_ID}/stream"
+                voice_id = el_voice or "21m00Tcm4TlvDq8ikWAM"
+                url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream?optimize_streaming_latency=4"
                 headers = {
-                    "xi-api-key": settings.ELEVENLABS_API_KEY,
+                    "xi-api-key": el_key,
                     "Content-Type": "application/json"
                 }
                 payload = {
                     "text": clean_text,
                     "model_id": "eleven_turbo_v2_5",
                     "voice_settings": {
-                        "stability": 0.85,
-                        "similarity_boost": 0.90,
-                        "style": 0.05
+                        "stability": 0.70,
+                        "similarity_boost": 0.80,
+                        "style": 0.0,
+                        "use_speaker_boost": True
                     }
                 }
                 async with httpx.AsyncClient(timeout=10.0) as client:
@@ -176,9 +181,9 @@ class TTSService:
                                     yield chunk
                             return
                         else:
-                            logger.warning(f"ElevenLabs error {response.status_code}, falling back to Edge TTS")
+                            logger.warning(f"ElevenLabs error {response.status_code}, falling back to Kokoro/Edge.")
             except Exception as e:
-                logger.error(f"ElevenLabs streaming exception: {e}, falling back to Edge-TTS")
+                logger.error(f"ElevenLabs streaming exception: {e}, falling back.")
 
         # 4. OpenAI Streaming TTS if configured
         if settings.OPENAI_API_KEY and provider == "openai":
