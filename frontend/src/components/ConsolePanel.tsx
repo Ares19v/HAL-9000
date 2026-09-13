@@ -1,13 +1,14 @@
 import React from 'react';
 import { HalEye } from './HalEye';
-import type { HalState } from '../types';
+import type { HalState, FrequencyBands } from '../types';
 
 interface ConsolePanelProps {
   state: HalState;
   audioLevel: number;
+  frequencyBands?: FrequencyBands;
 }
 
-export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel }) => {
+export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel, frequencyBands }) => {
   return (
     <div className="relative w-[340px] sm:w-[380px] rounded-xl brushed-metal p-5 border-2 border-[#363a45] shadow-[0_25px_70px_rgba(0,0,0,0.98)] flex flex-col items-center select-none">
       
@@ -62,7 +63,7 @@ export const ConsolePanel: React.FC<ConsolePanelProps> = ({ state, audioLevel })
 
       {/* Main Optical Fisheye Eye Unit */}
       <div className="my-1">
-        <HalEye state={state} audioLevel={audioLevel} />
+        <HalEye state={state} audioLevel={audioLevel} frequencyBands={frequencyBands} />
       </div>
 
       {/* Status LED Indicators with Realistic Bezel Insets & Halos */}

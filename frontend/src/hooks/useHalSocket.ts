@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { HalState, TelemetryData, ChatMessage, AppSettings } from '../types';
+import type { HalState, TelemetryData, ChatMessage, AppSettings, FrequencyBands } from '../types';
 
 interface UseHalSocketProps {
   settings: AppSettings;
@@ -11,6 +11,7 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentLlmText, setCurrentLlmText] = useState<string>('');
   const [audioLevel, setAudioLevel] = useState<number>(0);
+  const [frequencyBands, setFrequencyBands] = useState<FrequencyBands>({ bass: 0, mid: 0, treble: 0 });
   const [connected, setConnected] = useState<boolean>(false);
 
   const socketRef = useRef<WebSocket | null>(null);
@@ -19,6 +20,7 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
 
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const frequencyDataRef = useRef<Uint8Array>(new Uint8Array(64));
   const activeSourcesRef = useRef<{ source: AudioBufferSourceNode; gain: GainNode }[]>([]);
   const nextStartTimeRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
@@ -42,13 +44,23 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       const updateVisualizer = () => {
         if (analyserRef.current) {
           analyserRef.current.getByteFrequencyData(dataArray);
+          frequencyDataRef.current.set(dataArray);
+
           let sum = 0;
+          let bassSum = 0, midSum = 0, trebleSum = 0;
           for (let i = 0; i < dataArray.length; i++) {
             sum += dataArray[i];
+            if (i < 8) bassSum += dataArray[i];
+            else if (i < 28) midSum += dataArray[i];
+            else trebleSum += dataArray[i];
           }
           const avg = sum / dataArray.length;
-          // Normalized 0.0 to 1.0
           setAudioLevel(Math.min(1.0, avg / 120));
+          setFrequencyBands({
+            bass: Math.min(1.0, (bassSum / 8) / 130),
+            mid: Math.min(1.0, (midSum / 20) / 120),
+            treble: Math.min(1.0, (trebleSum / 36) / 100)
+          });
         }
         animFrameRef.current = requestAnimationFrame(updateVisualizer);
       };
@@ -284,6 +296,8 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     messages,
     currentLlmText,
     audioLevel,
+    frequencyBands,
+    getFrequencyData: useCallback(() => frequencyDataRef.current, []),
     connected,
     sendMessage,
     interrupt,

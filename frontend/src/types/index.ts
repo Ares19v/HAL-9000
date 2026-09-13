@@ -39,6 +39,12 @@ export interface TelemetryData {
   memory_integrity_percent: number;
 }
 
+export interface FrequencyBands {
+  bass: number;
+  mid: number;
+  treble: number;
+}
+
 export type HalState = 'idle' | 'listening' | 'thinking' | 'speaking';
 
 export interface ChatMessage {

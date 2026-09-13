@@ -9,7 +9,7 @@ import { useHalSocket } from './hooks/useHalSocket';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useAudioEffects } from './hooks/useAudioEffects';
 import type { AppSettings } from './types';
-import { Settings, Wifi, WifiOff, Volume2, VolumeX } from 'lucide-react';
+import { Settings, Wifi, WifiOff, Volume2, VolumeX, Maximize2 } from 'lucide-react';
 
 const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
@@ -50,13 +50,15 @@ export function App() {
     }
   }, [settings.soundEffects, playClickBlip]);
 
-  // HAL WebSocket connection & Audio pipeline
+  // HAL WebSocket connection & Multi-band Audio pipeline
   const {
     halState,
     telemetry,
     messages,
     currentLlmText,
     audioLevel,
+    frequencyBands,
+    getFrequencyData,
     connected,
     sendMessage,
     interrupt,
@@ -73,7 +75,6 @@ export function App() {
   } = useSpeechRecognition({
     vadEnabled: settings.vadEnabled,
     onSpeechStart: () => {
-      // Auto-interrupt HAL if user speaks
       if (halState === 'speaking') {
         interrupt();
       }
@@ -82,6 +83,35 @@ export function App() {
       sendMessage(spokenText);
     }
   });
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        triggerBlip();
+        toggleListening();
+      } else if (e.code === 'Escape') {
+        e.preventDefault();
+        triggerBlip();
+        interrupt();
+      } else if (e.key === 'h' || e.key === 'H') {
+        triggerBlip();
+        updateSettings({ ambientHum: !settings.ambientHum });
+      } else if (e.key === 'c' || e.key === 'C') {
+        triggerBlip();
+        setSettingsOpen(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleListening, interrupt, triggerBlip, settings.ambientHum]);
 
   // Unlock Web Audio on first user click
   useEffect(() => {
@@ -92,6 +122,15 @@ export function App() {
     window.addEventListener('click', handleFirstInteraction);
     return () => window.removeEventListener('click', handleFirstInteraction);
   }, [getAudioContext]);
+
+  const toggleFullscreen = () => {
+    triggerBlip();
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   return (
     <div className="min-h-screen text-[#e2e4ee] flex flex-col justify-between select-none relative overflow-x-hidden">
@@ -116,7 +155,7 @@ export function App() {
           </div>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3.5">
           {/* Connection Indicator */}
           <div className="flex items-center space-x-2 text-[11px]">
             {connected ? (
@@ -138,7 +177,7 @@ export function App() {
               triggerBlip();
               updateSettings({ ambientHum: !settings.ambientHum });
             }}
-            title={settings.ambientHum ? "Mute Cabin Hum" : "Enable Cabin Hum"}
+            title={settings.ambientHum ? "Mute Cabin Hum [H]" : "Enable Cabin Hum [H]"}
             className="p-1.5 rounded-md hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer border border-transparent hover:border-zinc-700"
           >
             {settings.ambientHum ? (
@@ -146,6 +185,15 @@ export function App() {
             ) : (
               <VolumeX className="w-4 h-4 text-zinc-600" />
             )}
+          </button>
+
+          {/* Fullscreen Toggle */}
+          <button
+            onClick={toggleFullscreen}
+            title="Toggle Cinema Fullscreen [F]"
+            className="p-1.5 rounded-md hover:bg-[#181a24] text-zinc-400 hover:text-zinc-200 transition-colors cursor-pointer border border-transparent hover:border-zinc-700 hidden sm:block"
+          >
+            <Maximize2 className="w-4 h-4" />
           </button>
 
           {/* Settings Config Button */}
@@ -184,7 +232,7 @@ export function App() {
 
           {/* Center Column: The Iconic HAL 9000 Console Unit (4 cols) */}
           <div className="lg:col-span-4 flex flex-col items-center justify-center order-1 lg:order-2 my-3 lg:my-0">
-            <ConsolePanel state={halState} audioLevel={audioLevel} />
+            <ConsolePanel state={halState} audioLevel={audioLevel} frequencyBands={frequencyBands} />
           </div>
 
           {/* Right Column: Teletype Flight Terminal & Log (4 cols) */}
@@ -204,7 +252,7 @@ export function App() {
 
         {/* Bottom Acoustic Carrier Oscilloscope & Aerospace Controls */}
         <div className="mt-6 flex flex-col gap-3.5">
-          <AudioWaveform state={halState} audioLevel={audioLevel} />
+          <AudioWaveform state={halState} audioLevel={audioLevel} getFrequencyData={getFrequencyData} />
           
           <VoiceControl
             halState={halState}
@@ -220,7 +268,7 @@ export function App() {
 
       </main>
 
-      {/* Footer Aerospace Telemetry Bar */}
+      {/* Footer Aerospace Telemetry Bar & Hotkey Legend */}
       <footer className="w-full bg-[#06070a] border-t border-[#181a24] px-5 py-2.5 text-[10px] font-mono text-zinc-500 flex flex-wrap items-center justify-between select-none">
         <div className="flex items-center space-x-3">
           <span className="font-bold text-zinc-400">HEURISTIC ALGORITHMIC SYSTEM 9000</span>
@@ -229,8 +277,14 @@ export function App() {
           <span>|</span>
           <span className="text-green-500 font-bold phosphor-green">ALL CIRCUITS OPERATIONAL</span>
         </div>
-        <div className="text-zinc-600 hidden md:inline tracking-wider italic">
-          "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do."
+        
+        {/* Interactive Keyboard Shortcuts Legend */}
+        <div className="flex items-center space-x-3 text-zinc-400 text-[9px] tracking-wider">
+          <span>HOTKEYS:</span>
+          <span className="bg-[#12141c] border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 font-bold">[SPACE] TALK</span>
+          <span className="bg-[#12141c] border border-zinc-800 px-1.5 py-0.5 rounded text-amber-300 font-bold">[ESC] INTERRUPT</span>
+          <span className="bg-[#12141c] border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 font-bold">[H] HUM</span>
+          <span className="bg-[#12141c] border border-zinc-800 px-1.5 py-0.5 rounded text-zinc-300 font-bold">[C] CONFIG</span>
         </div>
       </footer>
 
