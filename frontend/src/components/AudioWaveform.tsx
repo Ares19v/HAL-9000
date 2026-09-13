@@ -245,13 +245,13 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
         </div>
 
         {/* Tactile Mode Selectors */}
-        <div className="flex items-center space-x-1">
+        <div className="flex items-center space-x-1.5">
           <button
             onClick={() => setMode('oscilloscope')}
-            className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[9px] font-bold tracking-wider transition-all cursor-pointer ${
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded-[3px] text-[9px] font-mono font-bold tracking-widest uppercase transition-all cursor-pointer ${
               mode === 'oscilloscope'
-                ? 'bg-zinc-800 text-white border border-zinc-600 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-cyan-300 border border-cyan-500/80 shadow-[0_0_8px_rgba(6,182,212,0.4)]'
+                : 'bg-[#10121a] text-zinc-500 hover:text-zinc-300 border border-[#222533]'
             }`}
           >
             <Activity className="w-3 h-3" />
@@ -260,10 +260,10 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
 
           <button
             onClick={() => setMode('spectrum')}
-            className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[9px] font-bold tracking-wider transition-all cursor-pointer ${
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded-[3px] text-[9px] font-mono font-bold tracking-widest uppercase transition-all cursor-pointer ${
               mode === 'spectrum'
-                ? 'bg-zinc-800 text-white border border-zinc-600 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-amber-300 border border-amber-500/80 shadow-[0_0_8px_rgba(245,158,11,0.4)]'
+                : 'bg-[#10121a] text-zinc-500 hover:text-zinc-300 border border-[#222533]'
             }`}
           >
             <BarChart2 className="w-3 h-3" />
@@ -272,10 +272,10 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
 
           <button
             onClick={() => setMode('polar')}
-            className={`flex items-center space-x-1 px-2 py-0.5 rounded text-[9px] font-bold tracking-wider transition-all cursor-pointer ${
+            className={`flex items-center space-x-1 px-2.5 py-1 rounded-[3px] text-[9px] font-mono font-bold tracking-widest uppercase transition-all cursor-pointer ${
               mode === 'polar'
-                ? 'bg-zinc-800 text-white border border-zinc-600 shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-300'
+                ? 'bg-zinc-800 text-green-300 border border-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]'
+                : 'bg-[#10121a] text-zinc-500 hover:text-zinc-300 border border-[#222533]'
             }`}
           >
             <Disc className="w-3 h-3" />
