@@ -4,7 +4,7 @@
   :root {
     --font-display: 'Michroma', 'Orbitron', -apple-system, sans-serif;
     --font-brand: 'Syne', sans-serif;
-    --font-mono: 'JetBrains Mono', 'Share Tech Mono', monospace;
+    --font-mono: 'Share Tech Mono', 'JetBrains Mono', monospace;
     --font-sans: 'Rajdhani', sans-serif;
   }
 
@@ -12,15 +12,14 @@
     font-family: var(--font-sans);
     background-color: #040407;
     background-image: 
-      radial-gradient(circle at 50% 25%, rgba(22, 26, 38, 0.45) 0%, rgba(6, 7, 11, 0.95) 60%, #030305 100%),
-      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
-    background-size: 100% 100%, 48px 48px, 48px 48px;
+      radial-gradient(circle at 50% 25%, rgba(20, 24, 36, 0.5) 0%, rgba(5, 6, 10, 0.95) 65%, #020304 100%),
+      linear-gradient(rgba(255, 255, 255, 0.012) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.012) 1px, transparent 1px);
+    background-size: 100% 100%, 40px 40px, 40px 40px;
     color: #e2e5ef;
     margin: 0;
     padding: 0;
     min-height: 100vh;
-    letter-spacing: 0.02em;
   }
 }
 

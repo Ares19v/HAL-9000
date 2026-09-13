@@ -179,7 +179,7 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
       </div>
 
       {/* Subsystems Matrix */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
         
         {/* AE-35 Unit Radar & Dish Telemetry */}
         <div className={`relative crt-monitor p-3.5 rounded-xl border transition-all duration-300 overflow-hidden shadow-md ${
@@ -190,9 +190,9 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
           <div className="absolute inset-0 crt-scanlines pointer-events-none" />
 
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-1.5 font-bold uppercase text-[11px] text-zinc-300">
+            <div className="flex items-center space-x-1.5 font-bold uppercase text-[11px] text-zinc-200">
               <Radio className="w-3.5 h-3.5 text-blue-400" />
-              <span>AE-35 POINTING UNIT</span>
+              <span>AE-35 POINTING</span>
             </div>
             {isAE35Fault ? (
               <div className="flex items-center space-x-1 text-red-400 font-bold animate-pulse">
@@ -204,35 +204,35 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
             )}
           </div>
           
-          <div className="space-y-1 text-[11px]">
-            <div className="flex justify-between">
-              <span className="text-zinc-500">Tracking Status:</span>
-              <span className={isAE35Fault ? 'text-red-400 font-bold phosphor-red' : 'text-green-400 font-medium phosphor-green'}>
+          <div className="space-y-1.5 text-[10px]">
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-500">Tracking:</span>
+              <span className={isAE35Fault ? 'text-red-400 font-bold phosphor-red' : 'text-green-400 font-bold phosphor-green'}>
                 {telemetry.ae35_status}
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500">Azimuth / Elev:</span>
-              <span className={isAE35Fault ? 'text-red-300 font-bold' : 'text-zinc-300'}>
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-500">Az / El:</span>
+              <span className={isAE35Fault ? 'text-red-300 font-bold' : 'text-zinc-200 font-mono'}>
                 {azimuth}° / {elevation}°
               </span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-zinc-500">Carrier Signal:</span>
-              <span className={isAE35Fault ? 'text-red-400 font-bold' : 'text-cyan-400 font-bold'}>
+            <div className="flex justify-between items-center">
+              <span className="text-zinc-500">Carrier:</span>
+              <span className={isAE35Fault ? 'text-red-400 font-bold' : 'text-cyan-400 font-bold font-mono'}>
                 {signalDb} dBm
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between items-center">
               <span className="text-zinc-500">Variance:</span>
-              <span className={isAE35Fault ? 'text-red-400 font-bold' : 'text-zinc-400'}>
+              <span className={isAE35Fault ? 'text-red-400 font-bold' : 'text-zinc-300 font-mono'}>
                 {(telemetry.ae35_error_percent * 100).toFixed(3)}%
               </span>
             </div>
           </div>
 
           <div className="mt-3 pt-2.5 border-t border-zinc-800/70 flex items-center justify-between">
-            <span className="text-[9px] text-zinc-500 uppercase">Fault Simulation</span>
+            <span className="text-[9px] text-zinc-500 uppercase tracking-wider">Fault Sim</span>
             {isAE35Fault ? (
               <button 
                 onClick={onResetAE35}
@@ -256,10 +256,10 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
           <div className="absolute inset-0 crt-scanlines pointer-events-none" />
 
           <div>
-            <div className="flex items-center justify-between mb-2 font-bold uppercase text-[11px] text-zinc-300">
+            <div className="flex items-center justify-between mb-2 font-bold uppercase text-[11px] text-zinc-200">
               <div className="flex items-center space-x-1.5">
                 <Activity className="w-3.5 h-3.5 text-cyan-400" />
-                <span>CRYO-STASIS ECG VITALS</span>
+                <span>CRYO-STASIS ECG</span>
               </div>
               <span className="text-[9px] text-cyan-400 font-bold">3 SUBJECTS</span>
             </div>
@@ -269,13 +269,13 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
               <canvas ref={ecgCanvasRef} className="w-full h-full block" />
             </div>
 
-            <div className="space-y-1 mt-1.5">
+            <div className="space-y-1.5 mt-2">
               {telemetry.cryo_crew.map((member, i) => (
                 <div key={i} className="flex items-center justify-between text-[10px] bg-[#0b0d13] px-2 py-0.5 rounded border border-[#161822]">
-                  <span className="text-zinc-300 font-mono">{member.name}</span>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-cyan-400">{member.temp_c}°C</span>
-                    <span className="text-green-400 font-bold phosphor-green">{member.heart_bpm} BPM</span>
+                  <span className="text-zinc-300 font-mono truncate max-w-[85px]">{member.name}</span>
+                  <div className="flex items-center space-x-2 shrink-0">
+                    <span className="text-cyan-400 font-mono">{member.temp_c}°C</span>
+                    <span className="text-green-400 font-bold phosphor-green font-mono">{member.heart_bpm} BPM</span>
                   </div>
                 </div>
               ))}
@@ -288,10 +288,10 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
           <div className="absolute inset-0 crt-scanlines pointer-events-none" />
 
           <div>
-            <div className="flex items-center justify-between mb-2 font-bold uppercase text-[11px] text-zinc-300">
+            <div className="flex items-center justify-between mb-2 font-bold uppercase text-[11px] text-zinc-200">
               <div className="flex items-center space-x-1.5">
                 <Cpu className="w-3.5 h-3.5 text-red-400" />
-                <span>LOGIC CORE INTEGRITY</span>
+                <span>LOGIC CORE</span>
               </div>
               <span className="text-green-400 font-bold phosphor-green">100.0%</span>
             </div>
@@ -300,8 +300,8 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
             <div className="grid grid-cols-4 gap-1.5 my-2">
               {['BANK A', 'BANK B', 'BANK C', 'BANK D'].map((b, idx) => (
                 <div key={idx} className="bg-[#0b0d14] border border-[#1c1f2c] p-1.5 rounded text-center">
-                  <div className="text-[8px] text-zinc-500 font-bold">{b}</div>
-                  <div className="text-[10px] text-green-400 font-bold phosphor-green mt-0.5">NOMINAL</div>
+                  <div className="text-[8px] text-zinc-400 font-bold tracking-wider">{b}</div>
+                  <div className="text-[9px] text-green-400 font-bold phosphor-green mt-0.5">OK</div>
                   <div className="w-full bg-zinc-800 h-1 rounded-full mt-1 overflow-hidden">
                     <div className="bg-green-500 h-full w-full shadow-[0_0_4px_#22c55e]" />
                   </div>
@@ -310,21 +310,21 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
             </div>
 
             <div className="space-y-1 text-[10px] pt-1">
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Centrifuge Velocity:</span>
-                <span className="text-zinc-300 font-bold">{telemetry.centrifuge_rpm} RPM (1.0G)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500">Centrifuge:</span>
+                <span className="text-zinc-300 font-bold font-mono">{telemetry.centrifuge_rpm} RPM (1G)</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-zinc-500">Cabin Atmosphere:</span>
-                <span className="text-zinc-300">{telemetry.cabin_pressure_psi} PSI (O2/N2)</span>
+              <div className="flex justify-between items-center">
+                <span className="text-zinc-500">Cabin Atm:</span>
+                <span className="text-zinc-300 font-mono">{telemetry.cabin_pressure_psi} PSI</span>
               </div>
             </div>
           </div>
 
-          <div className="pt-2 mt-2 border-t border-zinc-800/80 flex items-center justify-between text-[9px] text-zinc-400">
-            <span className="text-green-500 font-bold">POD 1: SECURED</span>
-            <span className="text-green-500 font-bold">POD 2: SECURED</span>
-            <span className="text-amber-400 font-bold">POD 3: STOWED</span>
+          <div className="pt-2 mt-2 border-t border-zinc-800/80 flex items-center justify-between text-[9px] font-mono">
+            <span className="text-green-500 font-bold">POD 1: OK</span>
+            <span className="text-green-500 font-bold">POD 2: OK</span>
+            <span className="text-amber-400 font-bold">POD 3: STOW</span>
           </div>
         </div>
 
