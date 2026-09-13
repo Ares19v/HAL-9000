@@ -115,13 +115,25 @@ class TTSService:
             kokoro = get_kokoro()
             if kokoro is not None:
                 try:
-                    voice_name = voice_override if voice_override and not voice_override.startswith("en-") else settings.KOKORO_VOICE
-                    lang = "en-gb" if voice_name.startswith("bm_") or voice_name.startswith("bf_") else "en-us"
+                    # Use custom calibrated acoustic signature for HAL 9000 (calm, calculating baritone)
+                    hal_vector = get_hal_voice_vector()
+                    if voice_override and voice_override in ["bm_george", "bm_daniel", "am_michael", "am_adam"]:
+                        chosen_voice = voice_override
+                        lang = "en-gb" if chosen_voice.startswith("bm_") or chosen_voice.startswith("bf_") else "en-us"
+                    elif hal_vector is not None and (not voice_override or voice_override in ["hal9000", "bm_george"]):
+                        chosen_voice = hal_vector
+                        lang = "en-gb"
+                    else:
+                        chosen_voice = settings.KOKORO_VOICE
+                        lang = "en-gb"
+
+                    # 0.88 speed creates the measured, unhurried, chillingly tranquil Douglas Rain cadence
+                    speed = 0.88 if chosen_voice is hal_vector or voice_override in ["bm_george", "hal9000"] else settings.KOKORO_SPEED
 
                     loop = asyncio.get_running_loop()
                     samples, sample_rate = await loop.run_in_executor(
                         None,
-                        lambda: kokoro.create(clean_text, voice=voice_name, speed=settings.KOKORO_SPEED, lang=lang)
+                        lambda: kokoro.create(clean_text, voice=chosen_voice, speed=speed, lang=lang)
                     )
 
                     # Encode to in-memory WAV buffer
