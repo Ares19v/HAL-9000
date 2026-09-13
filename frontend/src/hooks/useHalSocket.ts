@@ -39,27 +39,27 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       analyser.smoothingTimeConstant = 0.75;
 
       // Douglas Rain Studio Vocal DSP Chain: High-intelligibility broadcast booth
-      const lowShelf = ctx.createBiquadFilter();
-      lowShelf.type = 'lowshelf';
-      lowShelf.frequency.value = 180;
-      lowShelf.gain.value = 1.0; // Subtle low-end warmth (no muddy boom)
+      // Subtle warmth at 220Hz, gentle dip in harsh upper-mids (4.5kHz)
+      const lowWarmth = ctx.createBiquadFilter();
+      lowWarmth.type = 'peaking';
+      lowWarmth.frequency.value = 240;
+      lowWarmth.gain.value = 2.0; // Chest resonance
+      lowWarmth.Q.value = 0.7;
 
-      const midPresence = ctx.createBiquadFilter();
-      midPresence.type = 'peaking';
-      midPresence.frequency.value = 3200;
-      midPresence.gain.value = 1.8; // Articulation & clarity in speech frequencies
-      midPresence.Q.value = 0.9;
+      const highSmooth = ctx.createBiquadFilter();
+      highSmooth.type = 'lowpass';
+      highSmooth.frequency.value = 8500; // Soft cinema roll-off (removes robot sibilance)
 
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -18;
-      comp.knee.value = 6;
-      comp.ratio.value = 3.0;
-      comp.attack.value = 0.003;
-      comp.release.value = 0.05;
+      comp.threshold.value = -16;
+      comp.knee.value = 8;
+      comp.ratio.value = 2.5;
+      comp.attack.value = 0.005;
+      comp.release.value = 0.06;
 
-      analyser.connect(lowShelf);
-      lowShelf.connect(midPresence);
-      midPresence.connect(comp);
+      analyser.connect(lowWarmth);
+      lowWarmth.connect(highSmooth);
+      highSmooth.connect(comp);
       comp.connect(ctx.destination);
 
       analyserRef.current = analyser;

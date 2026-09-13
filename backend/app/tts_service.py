@@ -122,13 +122,14 @@ class TTSService:
                         lang = "en-gb" if chosen_voice.startswith("bm_") or chosen_voice.startswith("bf_") else "en-us"
                     elif hal_vector is not None and (not voice_override or voice_override in ["hal9000", "bm_george"]):
                         chosen_voice = hal_vector
-                        lang = "en-gb"
+                        # Use en-us for smooth natural Mid-Atlantic vowels (no robotic clipped diphthongs)
+                        lang = "en-us"
                     else:
                         chosen_voice = settings.KOKORO_VOICE
-                        lang = "en-gb"
+                        lang = "en-us"
 
-                    # 0.88 speed creates the measured, unhurried, chillingly tranquil Douglas Rain cadence
-                    speed = 0.88 if chosen_voice is hal_vector or voice_override in ["bm_george", "hal9000"] else settings.KOKORO_SPEED
+                    # 0.98x speed flows naturally without dragging or robotic slowness
+                    speed = 0.98 if chosen_voice is hal_vector or voice_override in ["bm_george", "hal9000"] else settings.KOKORO_SPEED
 
                     loop = asyncio.get_running_loop()
                     samples, sample_rate = await loop.run_in_executor(

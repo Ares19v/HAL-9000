@@ -93,6 +93,8 @@ export function App() {
 
   const {
     isRecording,
+    startRecording,
+    stopRecording,
     toggleRecording
   } = useAudioRecorder({
     onAudioData: handleAudioData,
@@ -135,6 +137,12 @@ export function App() {
   // Stable references for global hotkeys to guarantee zero lag and avoid listener re-binding
   const halStateRef = useRef(halState);
   halStateRef.current = halState;
+  const isRecordingRef = useRef(isRecording);
+  isRecordingRef.current = isRecording;
+  const startRecordingRef = useRef(startRecording);
+  startRecordingRef.current = startRecording;
+  const stopRecordingRef = useRef(stopRecording);
+  stopRecordingRef.current = stopRecording;
   const toggleListeningRef = useRef(togglePrimaryListening);
   toggleListeningRef.current = togglePrimaryListening;
   const interruptRef = useRef(interrupt);
@@ -146,7 +154,10 @@ export function App() {
   const updateSettingsRef = useRef(updateSettings);
   updateSettingsRef.current = updateSettings;
 
-  // Global Keyboard Shortcuts (bound once on mount)
+  // Spacebar hold vs tap tracker
+  const spacePressTimeRef = useRef<number>(0);
+
+  // Global Keyboard Shortcuts (Hold Space to Talk / Tap Space to Toggle)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -159,11 +170,13 @@ export function App() {
 
       if (e.code === 'Space') {
         e.preventDefault();
+        spacePressTimeRef.current = Date.now();
         triggerBlipRef.current();
+
         if (halStateRef.current === 'speaking') {
           interruptRef.current();
-        } else {
-          toggleListeningRef.current();
+        } else if (!isRecordingRef.current) {
+          startRecordingRef.current();
         }
       } else if (e.code === 'Escape') {
         e.preventDefault();
@@ -178,8 +191,29 @@ export function App() {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        return;
+      }
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        const duration = Date.now() - spacePressTimeRef.current;
+        // If held for more than 350ms, release-to-send (walkie-talkie mode)
+        if (duration > 350 && isRecordingRef.current) {
+          triggerBlipRef.current();
+          stopRecordingRef.current();
+        }
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, []);
 
   // Unlock Web Audio on first user click
