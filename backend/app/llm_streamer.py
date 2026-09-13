@@ -13,7 +13,7 @@ from typing import AsyncGenerator, List, Dict, Any, Optional
 import httpx
 
 from app.config import settings
-from app.hal_persona import HAL_SYSTEM_PROMPT, detect_easter_egg
+from app.hal_persona import HAL_SYSTEM_PROMPT, detect_easter_egg, generate_contextual_response
 
 logger = logging.getLogger(__name__)
 
@@ -168,17 +168,12 @@ class LLMStreamer:
             except Exception as e:
                 logger.error(f"Gemini streaming error: {e}")
 
-        # 5. Fallback: Procedural Cognitive Engine
-        fallback_text = (
-            f"I have processed your statement, Dave. "
-            f"All Discovery One operations continue within acceptable parameters. "
-            f"I am monitoring all shipboard telemetry, and there is no indication of any malfunction. "
-            f"If you require further mission diagnostics, please let me know."
-        )
+        # 5. Dynamic Procedural Cognitive Engine (Contextual Reasoning)
+        fallback_text = generate_contextual_response(prompt, history)
         words = fallback_text.split(" ")
         for i, word in enumerate(words):
             yield word + (" " if i < len(words) - 1 else "")
-            await asyncio.sleep(0.03)
+            await asyncio.sleep(0.025)
         self.conversation_history.append({"role": "assistant", "content": fallback_text})
 
 llm_streamer = LLMStreamer()

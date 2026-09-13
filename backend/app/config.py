@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     
     # TTS Configuration
     TTS_PROVIDER: str = "edge"  # "edge", "openai", "elevenlabs"
-    EDGE_VOICE: str = "en-US-ChristopherNeural"  # Or "en-US-GuyNeural"
-    EDGE_RATE: str = "-6%"                       # HAL 9000 speaks at a calm, deliberate, unhurried tempo
-    EDGE_PITCH: str = "-8Hz"                     # Soft, low, perfectly measured baritone
+    EDGE_VOICE: str = "en-US-GuyNeural"          # Authentic Douglas Rain warm baritone
+    EDGE_RATE: str = "-8%"                       # Unhurried, deliberate HAL 9000 cadence
+    EDGE_PITCH: str = "-10Hz"                    # Intimate close-mic radio resonance
     
     # Discovery One Simulation
     MISSION_NAME: str = "Discovery One (Jupiter Mission)"

@@ -34,7 +34,29 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 128;
       analyser.smoothingTimeConstant = 0.75;
-      analyser.connect(ctx.destination);
+
+      // Douglas Rain Studio Vocal DSP Chain
+      const lowShelf = ctx.createBiquadFilter();
+      lowShelf.type = 'lowshelf';
+      lowShelf.frequency.value = 160;
+      lowShelf.gain.value = 3.5; // Intimate proximity baritone boost
+
+      const highShelf = ctx.createBiquadFilter();
+      highShelf.type = 'highshelf';
+      highShelf.frequency.value = 6200;
+      highShelf.gain.value = -2.2; // 1968 cinema optical tape warmth
+
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -16;
+      comp.knee.value = 8;
+      comp.ratio.value = 3.5;
+      comp.attack.value = 0.005;
+      comp.release.value = 0.08;
+
+      analyser.connect(lowShelf);
+      lowShelf.connect(highShelf);
+      highShelf.connect(comp);
+      comp.connect(ctx.destination);
 
       audioCtxRef.current = ctx;
       analyserRef.current = analyser;

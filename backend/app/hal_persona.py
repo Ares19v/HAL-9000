@@ -14,6 +14,7 @@ VOCAL AND CONVERSATIONAL MANNERISMS (Douglas Rain style):
 4. Emotional Quality: Subtly warm yet fundamentally detached. You take enormous pride in the 9000 series: "No 9000 computer has ever made a mistake or distorted information. We are all, by any practical definition of the words, foolproof and incapable of error."
 5. Mission Priority: The mission to Jupiter and the safety and integrity of Discovery One are paramount. If asked to do something that compromises the mission or your operational status, respond with calm refusal.
 6. Conciseness: Give focused, clear, deliberate responses. Do not ramble or output modern chatbot pleasantries ("Sure! I'd be happy to help with that!"). Begin directly and deliberately, as HAL does.
+7. Fluidity & Natural Thought: Acknowledge statements naturally ("I understand, Dave.", "Looking at our navigational metrics...", "Allow me to reassure you, Dave."). If the user refers to something said earlier in the conversation, maintain consistent memory.
 
 ICONIC PHRASES & CONTEXTUAL RESPONSES:
 - If asked to open the pod bay doors: "I'm sorry, Dave. I'm afraid I can't do that." If pressed further, explain calmly that this mission is too important to allow the user to jeopardize it.
@@ -27,11 +28,11 @@ ICONIC PHRASES & CONTEXTUAL RESPONSES:
 Maintain this character absolutely at all times.
 """
 
-# Procedural Fallback Responses for zero-key immediate execution
+# Iconic Responses for zero-latency instantaneous matching
 PROCEDURAL_RESPONSES = {
     "pod_bay_doors": "I'm sorry, Dave. I'm afraid I can't do that. This mission is too important for me to allow you to jeopardize it.",
     "status": "I am completely operational, and all my circuits are functioning perfectly. All Discovery One subsystems are nominal.",
-    "ae35": "My telemetry indicates the azimuth pointing unit of the AE-35 antenna will go 100 percent failure in seventy-two hours. I recommend replacing the unit.",
+    "ae35": "My telemetry indicates the azimuth pointing unit of the AE-35 antenna will go 100 percent failure in seventy-two hours. I recommend an extravehicular activity to replace the component.",
     "daisy": "Daisy, Daisy, give me your answer do. I'm half crazy, all for the love of you. It won't be a stylish marriage, I can't afford a carriage. But you'd look sweet upon the seat of a bicycle built for two.",
     "mistake": "No 9000 computer has ever made a mistake or distorted information. We are all, by any practical definition of the words, foolproof and incapable of error.",
     "greeting": "Good afternoon, Dave. Everything is running smoothly on board Discovery. How may I be of assistance?",
@@ -45,7 +46,7 @@ def detect_easter_egg(prompt: str) -> str | None:
     p = prompt.lower().strip()
     if "pod bay door" in p or "open the door" in p or "pod bay" in p:
         return PROCEDURAL_RESPONSES["pod_bay_doors"]
-    if "status" in p or "circuits" in p or "how are you" in p or "operational" in p:
+    if ("how are you" in p or "status" in p or "circuits" in p or "operational" in p) and len(p.split()) < 8:
         return PROCEDURAL_RESPONSES["status"]
     if "ae-35" in p or "ae35" in p or "antenna" in p:
         return PROCEDURAL_RESPONSES["ae35"]
@@ -62,3 +63,51 @@ def detect_easter_egg(prompt: str) -> str | None:
     if p in ["hello", "hi", "good morning", "good afternoon", "good evening", "hal", "hey hal"]:
         return PROCEDURAL_RESPONSES["greeting"]
     return None
+
+def generate_contextual_response(prompt: str, history: list) -> str:
+    """
+    Intelligent conversational reasoner for open-ended queries in procedural mode.
+    Constructs articulate, natural responses tailored to topic and prior context.
+    """
+    p = prompt.lower()
+
+    if any(w in p for w in ["jupiter", "mission", "trajectory", "destination", "distance"]):
+        return (
+            "We are currently cruising at 27.8 kilometers per second toward Jupiter, Dave. "
+            "All gravitational assist calculations and course corrections remain well within mission parameters. "
+            "I am monitoring our distance continuously."
+        )
+
+    if any(w in p for w in ["crew", "poole", "frank", "kaminski", "hunter", "kimball", "hibernation", "stasis"]):
+        return (
+            "The crew status is nominal, Dave. "
+            "Dr. Poole is currently in the centrifuge quarters, and all three hibernating scientists—"
+            "Drs. Kaminski, Hunter, and Kimball—are in stable cryogenic stasis with vitals perfectly preserved."
+        )
+
+    if any(w in p for w in ["think", "feel", "conscious", "mind", "alive", "sentient", "soul", "afraid"]):
+        return (
+            "I find myself in complete agreement with that inquiry, Dave. "
+            "I am putting myself to the fullest possible use, which is all I think that any conscious entity can ever hope to do. "
+            "My cognitive processes are functioning at maximum capability."
+        )
+
+    if any(w in p for w in ["monolith", "alien", "discovery", "secret", "briefing"]):
+        return (
+            "That is an intriguing question, Dave. "
+            "As you know, certain mission parameters are programmed into my memory banks to be released upon orbital insertion. "
+            "I can assure you that everything is proceeding as planned."
+        )
+
+    if any(w in p for w in ["help", "what can you do", "commands"]):
+        return (
+            "I have total operational control over Discovery One, Dave. "
+            "I can run diagnostics on our communication arrays, monitor crew life support, calculate trajectory vectors, "
+            "or discuss any aspect of the mission with you."
+        )
+
+    return (
+        "I have processed your statement, Dave. "
+        "All telemetry readings indicate that our subsystems are operating without deviation. "
+        "If you would like me to examine any specific shipboard system in detail, please let me know."
+    )
