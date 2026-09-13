@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { HalState, TelemetryData, ChatMessage, AppSettings, FrequencyBands } from '../types';
+import { getSharedAudioContext } from '../utils/audio';
 
 interface UseHalSocketProps {
   settings: AppSettings;
@@ -26,11 +27,13 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
   const animFrameRef = useRef<number | null>(null);
   const pendingSentenceAudioRef = useRef<Map<number, Uint8Array[]>>(new Map());
 
-  // Initialize Web Audio Context with 128 FFT analysis
+  // Initialize Web Audio Context with 128 FFT analysis using shared singleton
   const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current) {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioCtx();
+    const ctx = getSharedAudioContext();
+    if (!ctx) return null;
+    audioCtxRef.current = ctx;
+
+    if (!analyserRef.current) {
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 128;
       analyser.smoothingTimeConstant = 0.75;
@@ -58,7 +61,6 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       highShelf.connect(comp);
       comp.connect(ctx.destination);
 
-      audioCtxRef.current = ctx;
       analyserRef.current = analyser;
 
       // Real-time audio spectrum frequency loop
@@ -137,7 +139,14 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
           } else if (data.type === 'telemetry') {
             setTelemetry(data.data);
           } else if (data.type === 'status') {
-            setHalState(data.state);
+            // Only allow server to force idle if no active audio sources are queued or playing
+            if (data.state === 'idle') {
+              if (activeSourcesRef.current.length === 0) {
+                setHalState('idle');
+              }
+            } else {
+              setHalState(data.state);
+            }
           } else if (data.type === 'llm_delta') {
             setCurrentLlmText((prev) => prev + data.delta);
           } else if (data.type === 'sentence_start') {
@@ -187,6 +196,10 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
               }
               return '';
             });
+            // If no audio buffers were queued (e.g. silent or instant response), return to idle
+            if (activeSourcesRef.current.length === 0) {
+              setHalState('idle');
+            }
           } else if (data.type === 'interrupted') {
             stopAllAudio();
             setHalState('idle');

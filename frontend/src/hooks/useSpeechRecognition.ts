@@ -4,12 +4,14 @@ interface UseSpeechRecognitionProps {
   onTranscript: (text: string) => void;
   onSpeechStart?: () => void;
   vadEnabled: boolean;
+  isHalSpeaking?: boolean;
 }
 
 export function useSpeechRecognition({
   onTranscript,
   onSpeechStart,
-  vadEnabled
+  vadEnabled,
+  isHalSpeaking = false
 }: UseSpeechRecognitionProps) {
   const [isListening, setIsListening] = useState<boolean>(false);
   const [supported, setSupported] = useState<boolean>(true);
@@ -19,6 +21,19 @@ export function useSpeechRecognition({
   const silenceTimerRef = useRef<any>(null);
   const manualListeningRef = useRef<boolean>(false);
   const lastEmittedRef = useRef<string>('');
+
+  const onTranscriptRef = useRef(onTranscript);
+  onTranscriptRef.current = onTranscript;
+  const onSpeechStartRef = useRef(onSpeechStart);
+  onSpeechStartRef.current = onSpeechStart;
+
+  const isHalSpeakingRef = useRef(isHalSpeaking);
+  isHalSpeakingRef.current = isHalSpeaking;
+
+  const vadEnabledRef = useRef(vadEnabled);
+  vadEnabledRef.current = vadEnabled;
+
+  const isListeningRef = useRef<boolean>(false);
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -34,16 +49,22 @@ export function useSpeechRecognition({
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
+      isListeningRef.current = true;
       setIsListening(true);
     };
 
     recognition.onend = () => {
       // Auto-restart if VAD is active or user had manually toggled listening
-      if (vadEnabled || manualListeningRef.current) {
-        try {
-          recognition.start();
-        } catch {}
+      if (vadEnabledRef.current || manualListeningRef.current) {
+        setTimeout(() => {
+          if (vadEnabledRef.current || manualListeningRef.current) {
+            try {
+              recognition.start();
+            } catch {}
+          }
+        }, 60);
       } else {
+        isListeningRef.current = false;
         setIsListening(false);
       }
     };
@@ -57,35 +78,51 @@ export function useSpeechRecognition({
     const normalizeSpokenTranscript = (rawText: string): string => {
       let text = rawText.trim();
       // Fix Web Speech API acoustic mishearings
-      // 1. WhatsApp / what's app -> what's up
-      text = text.replace(/\b(what'?s\s*app|whatsapp|what\s+app|watch\s*up)\b/gi, "what's up");
-      text = text.replace(/\bi\s+have\s+what'?s\s*up\b/gi, "what's up");
-      // 2. HAL 9000 mishearings
+      text = text.replace(/\b(i('ve| have)?\s+)?(what'?s?\s*app|whatsapp|what\s+app|watch\s*up)(\s+how|\s+al|\s+hal)?\b/gi, "what's up HAL");
+      text = text.replace(/\bi\s+have\s+what'?s?\s*(app|up)\b/gi, "what's up");
+      text = text.replace(/\bhow\s+are\s+you\s+(how|al|hell)\b/gi, "how are you HAL");
       text = text.replace(/\b(how|hell|al|hole|hull|pal)\s+9000\b/gi, "HAL 9000");
       text = text.replace(/\b(hey|hi|hello|listen|okay|ok)\s+(how|hell|al|hole|hull|pal)\b/gi, "$1 HAL");
-      // 3. Pod bay doors mishearings
       text = text.replace(/\b(pot\s*bay|pop\s*bay|part\s*bay|party\s*doors?|pod\s*doors?)\b/gi, "pod bay doors");
-      // 4. AE-35 antenna mishearings
       text = text.replace(/\b(a|8|e|ae|80)\s*-?\s*35\b/gi, "AE-35");
-      // 5. Daisy song mishearings
       text = text.replace(/\b(lazy\s+bell|tasty\s+bell)\b/gi, "Daisy Bell");
       return text;
     };
 
     const commitTranscript = (rawText: string) => {
+      // Prevent committing if HAL is currently vocalizing through speakers
+      if (isHalSpeakingRef.current) {
+        return;
+      }
+
       const normalized = normalizeSpokenTranscript(rawText);
       const clean = normalized.trim();
       if (!clean || clean.length < 2) return;
       if (clean.toLowerCase() === lastEmittedRef.current.toLowerCase()) return;
 
-      // Capitalize first character
       const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
       lastEmittedRef.current = clean;
       setInterimText('');
-      onTranscript(formatted);
+      onTranscriptRef.current(formatted);
+
+      // In push-to-talk mode (vadEnabled is false), automatically close the microphone
+      // so HAL's voice playback does not bleed into the mic or create echo loops.
+      if (!vadEnabledRef.current) {
+        manualListeningRef.current = false;
+        try {
+          recognition.stop();
+        } catch {}
+        isListeningRef.current = false;
+        setIsListening(false);
+      }
     };
 
     recognition.onresult = (event: any) => {
+      // If HAL is vocalizing, ignore speaker bleed-in
+      if (isHalSpeakingRef.current) {
+        return;
+      }
+
       let currentInterim = '';
       let finalTranscript = '';
 
@@ -99,14 +136,14 @@ export function useSpeechRecognition({
       }
 
       if (currentInterim || finalTranscript) {
-        if (onSpeechStart) onSpeechStart();
+        if (onSpeechStartRef.current) onSpeechStartRef.current();
       }
 
       setInterimText(normalizeSpokenTranscript(currentInterim));
 
       if (finalTranscript.trim()) {
         commitTranscript(finalTranscript);
-      } else if (vadEnabled && currentInterim.trim()) {
+      } else if (vadEnabledRef.current && currentInterim.trim()) {
         // VAD pause detection: 450ms of silence commits phrase for fast, snappy turn-taking
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
@@ -133,25 +170,27 @@ export function useSpeechRecognition({
       } catch {}
       if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
     };
-  }, [vadEnabled, onTranscript, onSpeechStart]);
+  }, [vadEnabled]);
 
   const toggleListening = useCallback(() => {
     if (!recognitionRef.current) return;
-    if (isListening) {
+    if (isListeningRef.current) {
       manualListeningRef.current = false;
       try {
         recognitionRef.current.stop();
       } catch {}
+      isListeningRef.current = false;
       setIsListening(false);
       setInterimText('');
     } else {
       manualListeningRef.current = true;
       try {
         recognitionRef.current.start();
+        isListeningRef.current = true;
         setIsListening(true);
       } catch {}
     }
-  }, [isListening]);
+  }, []);
 
   return {
     isListening,

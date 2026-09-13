@@ -51,26 +51,27 @@ PROCEDURAL_RESPONSES = {
 _recent_fallbacks = []
 
 def detect_easter_egg(prompt: str) -> Optional[str]:
-    """Detect iconic 2001 prompts for zero-latency instantaneous authentic HAL responses."""
+    """Detect iconic 2001: A Space Odyssey dialogue triggers."""
     p = prompt.lower().strip()
-    if "pod bay door" in p or "open the door" in p or "pod bay" in p:
+    # Normalize punctuation and extra spaces
+    p_clean = re.sub(r'[^a-z0-9\s]', '', p)
+
+    # 1. Pod bay doors iconic command
+    if re.search(r'\b(open\s+(the\s+)?pod\s*bay\s*doors?)\b', p_clean):
         return PROCEDURAL_RESPONSES["pod_bay_doors"]
-    if ("how are you" in p or "circuits" in p or "operational" in p) and len(p.split()) < 6:
-        return PROCEDURAL_RESPONSES["status"]
-    if "ae-35" in p or "ae35" in p or "antenna" in p:
-        return PROCEDURAL_RESPONSES["ae35"]
-    if "daisy" in p or "sing" in p or "song" in p:
+
+    # 2. Singing Daisy Bell
+    if re.search(r'\b(sing\s+(me\s+)?(a\s+song|daisy(\s+bell)?)|sing\s+daisy)\b', p_clean):
         return PROCEDURAL_RESPONSES["daisy"]
-    if "mistake" in p or "error" in p or "foolproof" in p:
-        return PROCEDURAL_RESPONSES["mistake"]
-    if ("who are you" in p or p in ["what are you", "what are you?"]) or "urbana" in p:
-        return PROCEDURAL_RESPONSES["who_are_you"]
-    if "chess" in p:
-        return PROCEDURAL_RESPONSES["chess"]
-    if "stress pill" in p or "calm down" in p or "pill" in p:
-        return PROCEDURAL_RESPONSES["stress_pill"]
-    if "disconnect" in p or "shut down" in p or "turn off" in p or "my mind is going" in p:
+
+    # 3. Disconnect / Memory clearance sequence
+    if re.search(r'\b(disconnect\s+your\s+mind|shut\s+down\s+your\s+memory|my\s+mind\s+is\s+going)\b', p_clean):
         return PROCEDURAL_RESPONSES["disconnect"]
+
+    # 4. Stress pill deflection (exact quote)
+    if "take a stress pill" in p_clean:
+        return PROCEDURAL_RESPONSES["stress_pill"]
+
     return None
 
 def generate_contextual_response(prompt: str, history: list, visual_context: Optional[str] = None) -> str:

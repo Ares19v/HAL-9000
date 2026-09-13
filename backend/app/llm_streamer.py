@@ -36,20 +36,29 @@ class LLMStreamer:
         Stream LLM response tokens.
         Checks for iconic Easter eggs first for instant zero-latency playback.
         """
+        # Fix common acoustic speech recognition mishearings in prompt
+        clean_prompt = prompt.strip()
+        clean_prompt = re.sub(r'\b(i(\'ve| have)?\s+)?(what\'?s?\s*app|whatsapp|what\s+app|watch\s*up)(\s+how|\s+al|\s+hal)?\b', "what's up HAL", clean_prompt, flags=re.IGNORECASE)
+        clean_prompt = re.sub(r'\bi\s+have\s+what\'?s?\s*(app|up)\b', "what's up", clean_prompt, flags=re.IGNORECASE)
+        clean_prompt = re.sub(r'\bhow\s+are\s+you\s+(how|al|hell)\b', "how are you HAL", clean_prompt, flags=re.IGNORECASE)
+        clean_prompt = re.sub(r'\b(how|hell|al|hole|hull|pal)\s+9000\b', "HAL 9000", clean_prompt, flags=re.IGNORECASE)
+        clean_prompt = re.sub(r'\b(pot\s*bay|pop\s*bay|part\s*bay|party\s*doors?|pod\s*doors?)\b', "pod bay doors", clean_prompt, flags=re.IGNORECASE)
+        clean_prompt = re.sub(r'\b(a|8|e|ae|80)\s*-?\s*35\b', "AE-35", clean_prompt, flags=re.IGNORECASE)
+
         # If visual observation is present, prepend to user prompt
-        augmented_prompt = prompt
+        augmented_prompt = clean_prompt
         if visual_context:
-            augmented_prompt = f"[Visual Sensor Observation: {visual_context}]\n{prompt}"
+            augmented_prompt = f"[Visual Sensor Observation: {visual_context}]\n{clean_prompt}"
 
         # 1. Instant check for iconic 2001 prompts
-        easter_egg = detect_easter_egg(prompt)
+        easter_egg = detect_easter_egg(clean_prompt)
         if easter_egg:
             # Yield word by word with slight realistic delay
             words = easter_egg.split(" ")
             for i, word in enumerate(words):
                 yield word + (" " if i < len(words) - 1 else "")
                 await asyncio.sleep(0.015)
-            self.conversation_history.append({"role": "user", "content": prompt})
+            self.conversation_history.append({"role": "user", "content": clean_prompt})
             self.conversation_history.append({"role": "assistant", "content": easter_egg})
             return
 
@@ -66,7 +75,7 @@ class LLMStreamer:
 
         # 2. Try Groq (Fastest LLM inference engine - Low latency streaming)
         if active_groq:
-            for model_id in ["qwen/qwen3.8-27b", "qwen/qwen3.6-27b", "llama-3.3-70b-versatile", "openai/gpt-oss-120b"]:
+            for model_id in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b", "openai/gpt-oss-20b"]:
                 try:
                     headers = {
                         "Authorization": f"Bearer {active_groq}",

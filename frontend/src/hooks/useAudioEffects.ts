@@ -1,4 +1,5 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+import { getSharedAudioContext, playConsoleBlip } from '../utils/audio';
 
 /**
  * Web Audio API procedural atmospheric sound engine for Discovery One.
@@ -7,26 +8,21 @@ import { useEffect, useRef } from 'react';
  * - Relay switch / CRT toggle blip sound
  */
 export function useAudioEffects(enabled: boolean) {
-  const audioCtxRef = useRef<AudioContext | null>(null);
   const humGainRef = useRef<GainNode | null>(null);
   const humNodesRef = useRef<any[]>([]);
 
   useEffect(() => {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+
     if (!enabled) {
-      if (humGainRef.current && audioCtxRef.current) {
-        humGainRef.current.gain.setTargetAtTime(0.0001, audioCtxRef.current.currentTime, 0.25);
+      if (humGainRef.current) {
+        humGainRef.current.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.25);
       }
       return;
     }
 
     try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-
-      if (!audioCtxRef.current) {
-        audioCtxRef.current = new AudioCtx();
-      }
-      const ctx = audioCtxRef.current;
       if (ctx.state === 'suspended') {
         ctx.resume();
       }
@@ -113,29 +109,9 @@ export function useAudioEffects(enabled: boolean) {
     };
   }, [enabled]);
 
-  const playClickBlip = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = audioCtxRef.current || new AudioCtx();
-      if (ctx.state === 'suspended') ctx.resume();
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(920, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(460, ctx.currentTime + 0.035);
-
-      gain.gain.setValueAtTime(0.05, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.035);
-    } catch {}
-  };
+  const playClickBlip = useCallback(() => {
+    playConsoleBlip();
+  }, []);
 
   return { playClickBlip };
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ConsolePanel } from './components/ConsolePanel';
 import { SubsystemTelemetry } from './components/SubsystemTelemetry';
 import { TerminalLog } from './components/TerminalLog';
@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
   openaiKey: '',
   geminiKey: '',
-  voice: 'en-US-ChristopherNeural',
+  voice: 'en-US-GuyNeural', // Authentic Douglas Rain warm baritone
   ambientHum: false, // Default off until user engages to respect browser audio autoplay policy
   vadEnabled: false,
   soundEffects: true,
@@ -35,13 +35,13 @@ export function App() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const updateSettings = (newSettings: Partial<AppSettings>) => {
+  const updateSettings = useCallback((newSettings: Partial<AppSettings>) => {
     setSettings((prev) => {
       const updated = { ...prev, ...newSettings };
       localStorage.setItem('hal9000_settings', JSON.stringify(updated));
       return updated;
     });
-  };
+  }, []);
 
   // Sound effects
   const { playClickBlip } = useAudioEffects(settings.ambientHum);
@@ -72,6 +72,16 @@ export function App() {
   const [opticalSensorOpen, setOpticalSensorOpen] = useState(false);
 
   // Speech Recognition with auto-interrupt
+  const handleSpeechStart = useCallback(() => {
+    if (halState === 'speaking') {
+      interrupt();
+    }
+  }, [halState, interrupt]);
+
+  const handleTranscript = useCallback((spokenText: string) => {
+    sendMessage(spokenText);
+  }, [sendMessage]);
+
   const {
     isListening,
     supported,
@@ -79,17 +89,26 @@ export function App() {
     toggleListening
   } = useSpeechRecognition({
     vadEnabled: settings.vadEnabled,
-    onSpeechStart: () => {
-      if (halState === 'speaking') {
-        interrupt();
-      }
-    },
-    onTranscript: (spokenText) => {
-      sendMessage(spokenText);
-    }
+    isHalSpeaking: halState === 'speaking',
+    onSpeechStart: handleSpeechStart,
+    onTranscript: handleTranscript
   });
 
-  // Global Keyboard Shortcuts
+  // Stable references for global hotkeys to guarantee zero lag and avoid listener re-binding
+  const halStateRef = useRef(halState);
+  halStateRef.current = halState;
+  const toggleListeningRef = useRef(toggleListening);
+  toggleListeningRef.current = toggleListening;
+  const interruptRef = useRef(interrupt);
+  interruptRef.current = interrupt;
+  const triggerBlipRef = useRef(triggerBlip);
+  triggerBlipRef.current = triggerBlip;
+  const settingsRef = useRef(settings);
+  settingsRef.current = settings;
+  const updateSettingsRef = useRef(updateSettings);
+  updateSettingsRef.current = updateSettings;
+
+  // Global Keyboard Shortcuts (bound once on mount)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -97,26 +116,33 @@ export function App() {
         return;
       }
 
+      // Prevent key repeat when key is held down
+      if (e.repeat) return;
+
       if (e.code === 'Space') {
         e.preventDefault();
-        triggerBlip();
-        toggleListening();
+        triggerBlipRef.current();
+        if (halStateRef.current === 'speaking') {
+          interruptRef.current();
+        } else {
+          toggleListeningRef.current();
+        }
       } else if (e.code === 'Escape') {
         e.preventDefault();
-        triggerBlip();
-        interrupt();
+        triggerBlipRef.current();
+        interruptRef.current();
       } else if (e.key === 'h' || e.key === 'H') {
-        triggerBlip();
-        updateSettings({ ambientHum: !settings.ambientHum });
+        triggerBlipRef.current();
+        updateSettingsRef.current({ ambientHum: !settingsRef.current.ambientHum });
       } else if (e.key === 'c' || e.key === 'C') {
-        triggerBlip();
+        triggerBlipRef.current();
         setSettingsOpen(true);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [toggleListening, interrupt, triggerBlip, settings.ambientHum]);
+  }, []);
 
   // Unlock Web Audio on first user click
   useEffect(() => {
