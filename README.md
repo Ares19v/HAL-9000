@@ -1,46 +1,36 @@
 # HAL 9000 // USSC DISCOVERY ONE
 
-An ultra-realistic, low-latency conversational reproduction of the **HAL 9000** computer from Stanley Kubrick and Arthur C. Clarke's *2001: A Space Odyssey*.
+> **Real-time, ultra-low latency conversational AI reproduction of the HAL 9000 cognitive computer from Stanley Kubrick & Arthur C. Clarke's *2001: A Space Odyssey*.**  
+> Powered by **Groq Whisper STT (~120ms)**, **Kokoro-82M ONNX local neural voice (StyleTTS2)**, and interactive **Discovery One flight telemetry**.
 
-![HAL 9000 Interface](https://upload.wikimedia.org/wikipedia/commons/f/f6/HAL9000.svg)
-
----
-
-## Key Features
-
-### 1. Authentic HAL 9000 Persona & Douglas Rain Voice
-- **Calm, polite, chillingly rational cadence**: Soft-spoken, measured delivery with calibrated pitch (`-8Hz`) and deliberate tempo (`-6%`).
-- **Incarnation of Perfection**: Strictly refuses to acknowledge errors, maintains unshakeable faith in the 9000 series, and prioritizes the Jupiter mission above all else.
-- **Iconic 2001 Behaviors**:
-  - *"Open the pod bay doors, HAL"* ➔ *"I'm sorry, Dave. I'm afraid I can't do that."*
-  - *"Sing a song"* ➔ Sings *"Daisy Bell"* (*Bicycle Built for Two*).
-  - *"Run diagnostic on the AE-35 unit"* ➔ Reports 100% failure in 72 hours.
-  - *"Do you ever make mistakes?"* ➔ *"No 9000 computer has ever made a mistake or distorted information..."*
-
-### 2. Photorealistic Discovery One Console & Reactive Eye
-- **Convex Fisheye Lens**: Multi-layered optical glass with concentric iris rings, knurled bezel, specular glare reflections, and a white pinpoint pupil.
-- **Dynamic Gaze Tracking**: The eye subtly tracks mouse coordinates with realistic optical parallax.
-- **Audio-Reactive Luminescence**: The pupil and crimson aura pulse in real-time synchronized to the frequency spectrum of HAL's voice.
-- **Discovery One Telemetry**: Real-time telemetry monitoring the AE-35 Azimuth unit, Mission Elapsed Time (MET), cruising velocity (27.84 km/s), cryogenic stasis crew vitals, and memory integrity.
-- **Discovery One Ambient Atmosphere**: Procedural 60Hz cabin electrical hum and air circulation synthesized using the Web Audio API.
-
-### 3. Ultra-Low Latency Streaming Architecture
-- **Sentence Pipelining**: As the LLM streams tokens, sentences are parsed on-the-fly (`.`, `?`, `!`) and immediately sent to the neural TTS engine. The first sentence begins playing in **~400–600ms**, with subsequent sentences synthesized in the background.
-- **Multi-Provider LLM Engine**:
-  - **Built-in Procedural Engine**: Works out-of-the-box with **zero API keys required**.
-  - **Groq API Support**: Recommended for ultra-low latency (<150ms time-to-first-token with Llama 3.3 70B).
-  - **OpenAI & Google Gemini Support**: Drop in your key in the UI config panel.
-- **Zero-Latency Speech Recognition**: Web Speech API integration with continuous hands-free Voice Activity Detection (VAD) and auto-interruption when you speak.
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Groq LPU](https://img.shields.io/badge/Groq-LPU%20Whisper-F55036?logo=groq&logoColor=white)](https://groq.com)
+[![Kokoro-82M](https://img.shields.io/badge/Kokoro-82M%20Neural%20TTS-7952B3)](https://github.com/hexgrad/kokoro)
 
 ---
 
-## Tech Stack
+## 🛰️ Architecture Highlights
 
-| Layer | Technology |
-|---|---|
-| **Backend** | Python 3, FastAPI, Uvicorn, WebSockets, `edge-tts` (Microsoft Neural Voices), `httpx` |
-| **Frontend** | React 19, Vite, TypeScript, Tailwind CSS v4, Lucide Icons, Web Audio API |
-| **Audio** | Real-time PCM chunk streaming, Web Audio Analyser, Procedural Hum Synthesis |
+- **🎙️ Server-Side Groq Whisper (`whisper-large-v3-turbo`)**: Sub-150ms transcription of raw 16kHz microphone audio directly streamed via WebSockets, eliminating browser speech API pauses.
+- **🗣️ Kokoro-82M ONNX Local Neural Voice**: Local CPU StyleTTS2 neural speech engine using `bm_george` with the exact mid-Atlantic theatrical cadence of Douglas Rain.
+- **⚡ Pipelined Streaming**: Sentence tokens from the LLM stream directly into asynchronous TTS synthesis queues, achieving sub-second time-to-first-voice (TTFT).
+- **👁️ Responsive Optical Sensor & Eye Console**: Convex fisheye lens with dynamic mouse gaze parallax and multi-band audio spectrum luminescence.
+- **🚀 Discovery One Flight Telemetry**: Live interactive telemetry for the AE-35 Azimuth antenna, centrifuge rotation, cryogenic crew stasis, and memory bank integrity.
+- **⌨️ Push-to-Talk & Hotkeys**: `[SPACE]` push-to-talk, `[ESC]` instant speech interruption, and `[H]` cabin electrical hum atmosphere.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology | Purpose |
+|---|---|---|
+| **STT Engine** | Groq `whisper-large-v3-turbo` | ~120ms ultra-fast raw audio transcription |
+| **TTS Engine** | Kokoro-82M ONNX (`bm_george`) | Zero-cloud latency local neural voice synthesis |
+| **Cognitive Engine** | Groq LPU / OpenAI / Gemini | Real-time streaming conversational intelligence |
+| **Backend** | Python, FastAPI, WebSockets, Uvicorn | Subsystem telemetry & full-duplex audio pipeline |
+| **Frontend** | React 19, Vite, TypeScript, Tailwind CSS | 2001 aerospace bridge console & Web Audio DSP |
 
 ---
 
