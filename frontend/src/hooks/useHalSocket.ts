@@ -167,7 +167,14 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
               setHalState(data.state);
             }
           } else if (data.type === 'llm_delta') {
-            setCurrentLlmText((prev) => prev + data.delta);
+            setCurrentLlmText((prev) => {
+              const updated = prev + data.delta;
+              if (updated.includes('<think>')) {
+                const parts = updated.split('</think>');
+                return parts.length > 1 ? parts[1].trimStart() : '';
+              }
+              return updated;
+            });
           } else if (data.type === 'sentence_start') {
             setHalState('speaking');
             pendingSentenceAudioRef.current.set(data.sentence_id, []);

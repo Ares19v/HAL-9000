@@ -239,8 +239,9 @@ class LLMStreamer:
         visual_context: Optional[str] = None
     ) -> AsyncGenerator[str, None]:
         """
-        Stream filtered LLM tokens. Programmatically strips repetitive 'Good day' / 'Good morning'
-        prefixes unless the user explicitly initiated a greeting.
+        Stream filtered LLM tokens. Programmatically filters out:
+        1. Any <think> ... </think> reasoning tags and internal monologue.
+        2. Repetitive 'Good day' / 'Good morning' prefixes unless the user explicitly greeted HAL.
         """
         clean_prompt = prompt.strip()
         user_greeted = bool(re.search(r'\b(hello|hi|hey|greetings|good\s*(morning|afternoon|evening|day))\b', clean_prompt, re.IGNORECASE))
@@ -253,15 +254,60 @@ class LLMStreamer:
             visual_context=visual_context
         )
 
+        # Stage 1: Filter out <think> ... </think> blocks
+        async def _strip_thinking(stream: AsyncGenerator[str, None]) -> AsyncGenerator[str, None]:
+            in_think = False
+            buf = ""
+            async for tok in stream:
+                buf += tok
+                if in_think:
+                    if "</think>" in buf:
+                        buf = buf.split("</think>", 1)[1].lstrip()
+                        in_think = False
+                    else:
+                        continue
+
+                if "<think>" in buf:
+                    parts = buf.split("<think>", 1)
+                    before = parts[0]
+                    if before:
+                        yield before
+                    buf = parts[1]
+                    in_think = True
+                    if "</think>" in buf:
+                        after = buf.split("</think>", 1)[1].lstrip()
+                        in_think = False
+                        buf = after
+                    else:
+                        continue
+
+                if not in_think and buf:
+                    if "<" in buf:
+                        idx = buf.rfind("<")
+                        safe = buf[:idx]
+                        buf = buf[idx:]
+                        if safe:
+                            yield safe
+                    else:
+                        yield buf
+                        buf = ""
+
+            if not in_think and buf:
+                yield buf
+
+        thought_free_stream = _strip_thinking(raw_stream)
+
+        # Stage 2: If user initiated greeting, yield thought_free_stream directly
         if user_greeted:
-            async for tok in raw_stream:
+            async for tok in thought_free_stream:
                 yield tok
             return
 
+        # Stage 3: Strip opening greetings (Good day, Dev., etc.)
         prefix_buf = ""
         greeting_filtered = False
 
-        async for tok in raw_stream:
+        async for tok in thought_free_stream:
             if not greeting_filtered:
                 prefix_buf += tok
 
