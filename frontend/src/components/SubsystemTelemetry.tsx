@@ -151,9 +151,9 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
           </div>
         </div>
 
-        {/* Minimalist Vector Silhouette of USSC Discovery One */}
-        <div className="mt-3.5 pt-2.5 border-t border-[#181b26] flex items-center justify-between">
-          <svg className="w-full h-8 text-zinc-500 opacity-80" viewBox="0 0 400 30" fill="none">
+        {/* Minimalist Vector Silhouette of USSC Discovery One with Animated Propulsion & Signals */}
+        <div className="mt-3.5 pt-2.5 border-t border-[#181b26] flex items-center justify-between relative overflow-hidden">
+          <svg className="w-full h-8 text-zinc-500 opacity-90" viewBox="0 0 400 30" fill="none">
             {/* Command Sphere */}
             <circle cx="25" cy="15" r="11" stroke="currentColor" strokeWidth="1.5" />
             <circle cx="25" cy="15" r="4" fill="currentColor" opacity="0.4" />
@@ -166,14 +166,40 @@ export const SubsystemTelemetry: React.FC<SubsystemTelemetryProps> = ({
                 <line x1={x + 6} y1="15" x2={x + 19} y2="15" stroke="currentColor" strokeWidth="1.5" />
               </g>
             ))}
-            {/* AE-35 Antenna on Spine */}
+            {/* AE-35 Antenna on Spine with Animated Transmission Waves */}
             <line x1="145" y1="11" x2="145" y2="4" stroke="currentColor" strokeWidth="1.5" />
-            <ellipse cx="145" cy="3" rx="8" ry="3" stroke={isAE35Fault ? '#ef4444' : '#22c55e'} strokeWidth="1.5" fill="none" />
-            {/* Propulsion Reactor Unit */}
+            <ellipse 
+              cx="145" 
+              cy="3" 
+              rx="8" 
+              ry="3" 
+              stroke={isAE35Fault ? '#ef4444' : '#22c55e'} 
+              strokeWidth="1.5" 
+              fill={isAE35Fault ? 'rgba(239,68,68,0.2)' : 'rgba(34,197,94,0.2)'} 
+              className="animate-pulse"
+            />
+            {/* Microwave signal pulse emitted from dish */}
+            {!isAE35Fault && (
+              <circle cx="145" cy="3" r="1.5" fill="#22c55e">
+                <animate attributeName="r" values="1.5;14" dur="2s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.8;0" dur="2s" repeatCount="indefinite" />
+              </circle>
+            )}
+
+            {/* Propulsion Reactor Unit with Animated Plasma Exhaust Plume */}
             <path d="M295 8 L355 8 L365 11 L370 15 L365 19 L355 22 L295 22 Z" stroke="currentColor" strokeWidth="1.5" fill="#0d0f14" />
-            <line x1="370" y1="12" x2="385" y2="10" stroke="currentColor" strokeWidth="1.5" />
-            <line x1="370" y1="15" x2="390" y2="15" stroke="currentColor" strokeWidth="1.5" />
-            <line x1="370" y1="18" x2="385" y2="20" stroke="currentColor" strokeWidth="1.5" />
+            <line x1="370" y1="12" x2="385" y2="10" stroke="#00e5ff" strokeWidth="1.5" opacity="0.8">
+              <animate attributeName="x2" values="385;395;385" dur="0.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="0.8s" repeatCount="indefinite" />
+            </line>
+            <line x1="370" y1="15" x2="395" y2="15" stroke="#38bdf8" strokeWidth="2" opacity="0.9">
+              <animate attributeName="x2" values="395;405;395" dur="0.6s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.7;1;0.7" dur="0.6s" repeatCount="indefinite" />
+            </line>
+            <line x1="370" y1="18" x2="385" y2="20" stroke="#00e5ff" strokeWidth="1.5" opacity="0.8">
+              <animate attributeName="x2" values="385;395;385" dur="0.8s" repeatCount="indefinite" />
+              <animate attributeName="opacity" values="0.5;1;0.5" dur="0.8s" repeatCount="indefinite" />
+            </line>
           </svg>
         </div>
       </div>

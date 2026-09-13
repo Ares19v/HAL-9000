@@ -61,29 +61,61 @@
 /* High-Gloss Anamorphic & Optical Flares */
 .hal-eye-glow {
   filter: drop-shadow(0 0 25px #ff1a1a) drop-shadow(0 0 60px rgba(255, 30, 0, 0.75));
+  animation: eye-subtle-pulse 4s ease-in-out infinite;
 }
 
 .hal-speaking-glow {
   filter: drop-shadow(0 0 35px #ff2525) drop-shadow(0 0 95px rgba(255, 45, 0, 0.98));
+  animation: eye-vocal-flutter 0.15s ease-in-out infinite alternate;
+}
+
+@keyframes eye-subtle-pulse {
+  0%, 100% { opacity: 0.92; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes eye-vocal-flutter {
+  0% { filter: drop-shadow(0 0 30px #ff2525) drop-shadow(0 0 80px rgba(255, 45, 0, 0.9)); }
+  100% { filter: drop-shadow(0 0 42px #ff3838) drop-shadow(0 0 110px rgba(255, 60, 0, 1)); }
 }
 
 /* Precision Aerospace CRT Screen Unit */
 .crt-monitor {
+  position: relative;
   background: radial-gradient(circle at 50% 50%, #0a0c13 0%, #05060a 100%);
   border: 1px solid #1f2330;
   box-shadow: 
     inset 0 0 24px rgba(0, 0, 0, 0.95),
     inset 0 1px 1px rgba(255, 255, 255, 0.08),
     0 8px 24px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
 }
 
-/* Subtle Raster Scanlines with RGB Subpixel Dispersion */
+/* Subtle CRT Raster Scanlines with Organic Screen Roll */
 .crt-scanlines {
   background: 
-    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%),
-    linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.015), rgba(0, 0, 255, 0.03));
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.35) 50%),
+    linear-gradient(90deg, rgba(255, 0, 0, 0.025), rgba(0, 255, 0, 0.012), rgba(0, 0, 255, 0.025));
   background-size: 100% 3px, 6px 100%;
   pointer-events: none;
+}
+
+/* Authentic CRT Vertical Beam Sweep */
+.crt-monitor::after {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0; left: 0; bottom: 0; right: 0;
+  background: linear-gradient(rgba(18, 16, 16, 0) 0%, rgba(32, 255, 77, 0.02) 50%, rgba(18, 16, 16, 0) 100%);
+  opacity: 0.8;
+  pointer-events: none;
+  height: 20%;
+  animation: crt-beam-roll 7s linear infinite;
+}
+
+@keyframes crt-beam-roll {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(500%); }
 }
 
 /* Backlit Annunciator Switch Styling */
@@ -92,9 +124,14 @@
     inset 0 1px 1px rgba(255, 255, 255, 0.18),
     inset 0 -1px 2px rgba(0, 0, 0, 0.7),
     0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Phosphor Glows */
+.annunciator-btn:active {
+  transform: translateY(1px);
+}
+
+/* Phosphor Glows with Micro Flicker */
 .phosphor-green {
   text-shadow: 0 0 8px rgba(34, 197, 94, 0.75);
 }
