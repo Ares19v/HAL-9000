@@ -19,27 +19,41 @@ from app.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Global lazy-loaded Kokoro instance
+# Global lazy-loaded Kokoro instance & custom voice vectors
 _kokoro_instance = None
+_hal9000_voice_vector = None
 
 def get_kokoro():
-    global _kokoro_instance
+    global _kokoro_instance, _hal9000_voice_vector
     if _kokoro_instance is None:
         try:
             from kokoro_onnx import Kokoro
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             model_path = os.path.join(base_dir, settings.KOKORO_MODEL_PATH)
             voices_path = os.path.join(base_dir, settings.KOKORO_VOICES_PATH)
+            hal_npy_path = os.path.join(base_dir, "models", "hal9000_voice.npy")
             
             if os.path.exists(model_path) and os.path.exists(voices_path):
                 logger.info(f"[Kokoro] Loading ONNX model from {model_path}...")
                 _kokoro_instance = Kokoro(model_path, voices_path)
                 logger.info("[Kokoro] Kokoro-82M ONNX model successfully initialized.")
+
+                # Load custom synthesized HAL 9000 acoustic timbre
+                if os.path.exists(hal_npy_path):
+                    import numpy as np
+                    _hal9000_voice_vector = np.load(hal_npy_path)
+                    logger.info("[Kokoro] Calibrated HAL 9000 acoustic signature loaded.")
             else:
                 logger.warning(f"[Kokoro] Model files not found at {model_path}. Kokoro unavailable.")
         except Exception as e:
             logger.error(f"[Kokoro] Failed to initialize Kokoro-ONNX: {e}")
     return _kokoro_instance
+
+def get_hal_voice_vector():
+    global _hal9000_voice_vector
+    if _hal9000_voice_vector is None:
+        get_kokoro()
+    return _hal9000_voice_vector
 
 class TTSService:
     def __init__(self):
