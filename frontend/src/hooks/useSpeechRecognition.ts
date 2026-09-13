@@ -18,6 +18,7 @@ export function useSpeechRecognition({
   const recognitionRef = useRef<any>(null);
   const silenceTimerRef = useRef<any>(null);
   const manualListeningRef = useRef<boolean>(false);
+  const lastEmittedRef = useRef<string>('');
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -30,6 +31,7 @@ export function useSpeechRecognition({
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
       setIsListening(true);
@@ -48,8 +50,20 @@ export function useSpeechRecognition({
 
     recognition.onerror = (event: any) => {
       if (event.error !== 'no-speech') {
-        console.warn("[SpeechRecognition] error:", event.error);
+        console.warn("[SpeechRecognition] status notice:", event.error);
       }
+    };
+
+    const commitTranscript = (rawText: string) => {
+      const clean = rawText.trim();
+      if (!clean || clean.length < 2) return;
+      if (clean.toLowerCase() === lastEmittedRef.current.toLowerCase()) return;
+
+      // Capitalize first character
+      const formatted = clean.charAt(0).toUpperCase() + clean.slice(1);
+      lastEmittedRef.current = clean;
+      setInterimText('');
+      onTranscript(formatted);
     };
 
     recognition.onresult = (event: any) => {
@@ -72,17 +86,15 @@ export function useSpeechRecognition({
       setInterimText(currentInterim);
 
       if (finalTranscript.trim()) {
-        setInterimText('');
-        onTranscript(finalTranscript.trim());
+        commitTranscript(finalTranscript);
       } else if (vadEnabled && currentInterim.trim()) {
-        // VAD pause detection: if user stops speaking for 900ms, commit interim text
+        // VAD pause detection: 780ms of silence commits phrase for fast turn-taking
         if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
         silenceTimerRef.current = setTimeout(() => {
           if (currentInterim.trim()) {
-            onTranscript(currentInterim.trim());
-            setInterimText('');
+            commitTranscript(currentInterim);
           }
-        }, 950);
+        }, 780);
       }
     };
 

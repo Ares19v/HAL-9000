@@ -1,7 +1,7 @@
 """
 HAL 9000 Real-Time WebSocket Controller
 Manages:
-- Token-to-sentence streaming pipeline
+- Token-to-sentence streaming pipeline with intelligent abbreviation handling
 - Pipelined parallel sentence TTS synthesis
 - Audio chunk delivery to frontend Web Audio API player
 - Real-time Discovery One telemetry broadcast
@@ -12,7 +12,7 @@ import base64
 import json
 import logging
 import re
-from typing import Set
+from typing import Set, List, Tuple
 from fastapi import WebSocket, WebSocketDisconnect
 
 from app.llm_streamer import llm_streamer
@@ -21,7 +21,48 @@ from app.telemetry import telemetry_engine
 
 logger = logging.getLogger(__name__)
 
-SENTENCE_SPLIT_REGEX = re.compile(r'([.?!;]+(?:\s+|$))')
+# Common abbreviations that should NOT trigger a sentence split
+ABBREVIATIONS = {
+    "dr.", "mr.", "mrs.", "ms.", "u.s.", "u.s.s.c.", "jan.", "feb.", "mar.", 
+    "apr.", "jun.", "jul.", "aug.", "sep.", "sept.", "oct.", "nov.", "dec.", 
+    "no.", "etc.", "e.g.", "i.e.", "vs.", "st.", "col.", "gen.", "capt.", "cmdr."
+}
+
+def extract_complete_sentences(buffer: str) -> Tuple[List[str], str]:
+    """
+    Intelligently split buffer into complete sentences while respecting
+    abbreviations and short acronyms. Returns (complete_sentences, remaining_buffer).
+    """
+    # Look for sentence boundary punctuation followed by space or newline
+    matches = list(re.finditer(r'([.?!;]+)(?:\s+|$)', buffer))
+    if not matches:
+        return [], buffer
+
+    sentences = []
+    last_idx = 0
+
+    for match in matches:
+        end_pos = match.end()
+        candidate = buffer[last_idx:end_pos].strip()
+        
+        # Check if candidate ends with an abbreviation
+        words = candidate.split()
+        if words:
+            last_word = words[-1].lower()
+            if last_word in ABBREVIATIONS:
+                # Do not split on this punctuation
+                continue
+            # Check for single-letter initials like "C." or "E."
+            if len(last_word) == 2 and last_word[0].isalpha() and last_word[1] == '.':
+                continue
+
+        # Valid sentence found
+        if candidate:
+            sentences.append(candidate)
+            last_idx = end_pos
+
+    remaining = buffer[last_idx:]
+    return sentences, remaining
 
 class ConnectionManager:
     def __init__(self):
@@ -153,20 +194,14 @@ async def handle_hal_websocket(websocket: WebSocket):
                             buffer += token
 
                             # Check if we have complete sentence(s) ready for TTS
-                            parts = SENTENCE_SPLIT_REGEX.split(buffer)
-                            if len(parts) > 1:
-                                # We have at least one complete sentence
-                                complete_sentences = parts[:-1]
-                                buffer = parts[-1]  # Keep remaining uncompleted phrase
-
-                                for i in range(0, len(complete_sentences), 2):
-                                    sentence_text = complete_sentences[i] + (complete_sentences[i+1] if i+1 < len(complete_sentences) else "")
-                                    clean_sentence = sentence_text.strip()
-                                    if clean_sentence:
-                                        sentence_id += 1
-                                        await synthesize_and_send_sentence(
-                                            websocket, sentence_id, clean_sentence, voice_override
-                                        )
+                            sentences, buffer = extract_complete_sentences(buffer)
+                            for sentence in sentences:
+                                if interrupted:
+                                    break
+                                sentence_id += 1
+                                await synthesize_and_send_sentence(
+                                    websocket, sentence_id, sentence, voice_override
+                                )
 
                         # Handle any trailing text remaining in buffer
                         remaining = buffer.strip()
@@ -203,14 +238,18 @@ async def synthesize_and_send_sentence(
     voice_override: str | None = None
 ):
     """Synthesize a sentence using low-latency TTS and stream binary audio packets."""
+    clean_text = sentence_text.strip()
+    if not clean_text:
+        return
+
     await websocket.send_json({
         "type": "sentence_start",
         "sentence_id": sentence_id,
-        "text": sentence_text
+        "text": clean_text
     })
 
     chunk_seq = 0
-    async for audio_bytes in tts_service.stream_audio_chunks(sentence_text, voice_override):
+    async for audio_bytes in tts_service.stream_audio_chunks(clean_text, voice_override):
         chunk_seq += 1
         b64_audio = base64.b64encode(audio_bytes).decode("ascii")
         await websocket.send_json({

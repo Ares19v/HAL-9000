@@ -14,27 +14,30 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
   const [connected, setConnected] = useState<boolean>(false);
 
   const socketRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<any>(null);
+  const reconnectAttemptsRef = useRef<number>(0);
+
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const activeSourcesRef = useRef<{ source: AudioBufferSourceNode; gain: GainNode }[]>([]);
   const nextStartTimeRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
   const pendingSentenceAudioRef = useRef<Map<number, Uint8Array[]>>(new Map());
 
-  // Initialize Web Audio Context
+  // Initialize Web Audio Context with 128 FFT analysis
   const getAudioContext = useCallback(() => {
     if (!audioCtxRef.current) {
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       const ctx = new AudioCtx();
       const analyser = ctx.createAnalyser();
       analyser.fftSize = 128;
-      analyser.smoothingTimeConstant = 0.8;
+      analyser.smoothingTimeConstant = 0.75;
       analyser.connect(ctx.destination);
 
       audioCtxRef.current = ctx;
       analyserRef.current = analyser;
 
-      // Start visualizer loop
+      // Real-time audio spectrum frequency loop
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       const updateVisualizer = () => {
         if (analyserRef.current) {
@@ -44,8 +47,8 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
             sum += dataArray[i];
           }
           const avg = sum / dataArray.length;
-          // Normalized level 0.0 - 1.0
-          setAudioLevel(Math.min(1.0, avg / 128));
+          // Normalized 0.0 to 1.0
+          setAudioLevel(Math.min(1.0, avg / 120));
         }
         animFrameRef.current = requestAnimationFrame(updateVisualizer);
       };
@@ -57,93 +60,113 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     return audioCtxRef.current;
   }, []);
 
-  // Connect WebSocket
+  // Connect WebSocket with Auto-Reconnect
   useEffect(() => {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host;
-    // In dev mode with Vite proxy, or direct backend port 8000
-    const wsUrl = `${protocol}//${host}/ws/hal`;
+    let isUnmounted = false;
 
-    const ws = new WebSocket(wsUrl);
-    socketRef.current = ws;
+    const connectWebSocket = () => {
+      if (isUnmounted) return;
 
-    ws.onopen = () => {
-      setConnected(true);
-      console.log("[HAL 9000] WebSocket connection established.");
-    };
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = window.location.host;
+      const wsUrl = `${protocol}//${host}/ws/hal`;
 
-    ws.onclose = () => {
-      setConnected(false);
-      console.log("[HAL 9000] WebSocket connection closed.");
-    };
+      const ws = new WebSocket(wsUrl);
+      socketRef.current = ws;
 
-    ws.onmessage = async (event) => {
-      try {
-        const data = JSON.parse(event.data);
+      ws.onopen = () => {
+        setConnected(true);
+        reconnectAttemptsRef.current = 0;
+        console.log("[HAL 9000] WebSocket telemetry & audio bus connected.");
+      };
 
-        if (data.type === 'system_ready') {
-          if (data.telemetry) setTelemetry(data.telemetry);
-        } else if (data.type === 'telemetry') {
-          setTelemetry(data.data);
-        } else if (data.type === 'status') {
-          setHalState(data.state);
-        } else if (data.type === 'llm_delta') {
-          setCurrentLlmText((prev) => prev + data.delta);
-        } else if (data.type === 'sentence_start') {
-          setHalState('speaking');
-          pendingSentenceAudioRef.current.set(data.sentence_id, []);
-        } else if (data.type === 'audio_chunk') {
-          // Accumulate raw binary chunk for this sentence
-          const rawBinary = Uint8Array.from(atob(data.audio_base64), c => c.charCodeAt(0));
-          const currentChunks = pendingSentenceAudioRef.current.get(data.sentence_id) || [];
-          currentChunks.push(rawBinary);
-          pendingSentenceAudioRef.current.set(data.sentence_id, currentChunks);
-        } else if (data.type === 'sentence_end') {
-          // Complete sentence audio assembled, decode and schedule playback
-          const chunks = pendingSentenceAudioRef.current.get(data.sentence_id);
-          if (chunks && chunks.length > 0) {
-            let totalLength = 0;
-            chunks.forEach(c => totalLength += c.byteLength);
-            const combined = new Uint8Array(totalLength);
-            let offset = 0;
-            chunks.forEach(c => {
-              combined.set(c, offset);
-              offset += c.byteLength;
-            });
-
-            playAudioBuffer(combined.buffer);
-          }
-          pendingSentenceAudioRef.current.delete(data.sentence_id);
-        } else if (data.type === 'stream_complete') {
-          setCurrentLlmText((finalText) => {
-            if (finalText) {
-              setMessages((prev) => [
-                ...prev,
-                {
-                  id: Date.now().toString(),
-                  role: 'hal',
-                  text: finalText,
-                  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
-                }
-              ]);
-            }
-            return '';
-          });
-        } else if (data.type === 'interrupted') {
-          stopAllAudio();
-          setHalState('idle');
+      ws.onclose = () => {
+        setConnected(false);
+        console.log("[HAL 9000] WebSocket connection closed. Attempting reconnect...");
+        if (!isUnmounted) {
+          const delay = Math.min(1000 * Math.pow(1.5, reconnectAttemptsRef.current), 8000);
+          reconnectAttemptsRef.current += 1;
+          reconnectTimeoutRef.current = setTimeout(connectWebSocket, delay);
         }
-      } catch (err) {
-        console.error("[HAL 9000] Error processing message:", err);
-      }
+      };
+
+      ws.onerror = (e) => {
+        console.warn("[HAL 9000] WebSocket communication error:", e);
+      };
+
+      ws.onmessage = async (event) => {
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'system_ready') {
+            if (data.telemetry) setTelemetry(data.telemetry);
+          } else if (data.type === 'telemetry') {
+            setTelemetry(data.data);
+          } else if (data.type === 'status') {
+            setHalState(data.state);
+          } else if (data.type === 'llm_delta') {
+            setCurrentLlmText((prev) => prev + data.delta);
+          } else if (data.type === 'sentence_start') {
+            setHalState('speaking');
+            pendingSentenceAudioRef.current.set(data.sentence_id, []);
+          } else if (data.type === 'audio_chunk') {
+            // Accumulate raw binary chunk for this sentence
+            const rawBinary = Uint8Array.from(atob(data.audio_base64), c => c.charCodeAt(0));
+            const currentChunks = pendingSentenceAudioRef.current.get(data.sentence_id) || [];
+            currentChunks.push(rawBinary);
+            pendingSentenceAudioRef.current.set(data.sentence_id, currentChunks);
+          } else if (data.type === 'sentence_end') {
+            // Complete sentence audio assembled, decode and schedule with crossfade
+            const chunks = pendingSentenceAudioRef.current.get(data.sentence_id);
+            if (chunks && chunks.length > 0) {
+              let totalLength = 0;
+              chunks.forEach(c => totalLength += c.byteLength);
+              const combined = new Uint8Array(totalLength);
+              let offset = 0;
+              chunks.forEach(c => {
+                combined.set(c, offset);
+                offset += c.byteLength;
+              });
+
+              playAudioBuffer(combined.buffer);
+            }
+            pendingSentenceAudioRef.current.delete(data.sentence_id);
+          } else if (data.type === 'stream_complete') {
+            setCurrentLlmText((finalText) => {
+              if (finalText) {
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: Date.now().toString(),
+                    role: 'hal',
+                    text: finalText,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+                  }
+                ]);
+              }
+              return '';
+            });
+          } else if (data.type === 'interrupted') {
+            stopAllAudio();
+            setHalState('idle');
+          }
+        } catch (err) {
+          console.error("[HAL 9000] Error processing message:", err);
+        }
+      };
     };
+
+    connectWebSocket();
 
     return () => {
-      ws.close();
+      isUnmounted = true;
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (socketRef.current) socketRef.current.close();
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
   }, []);
 
+  // Play audio buffer with seamless micro-fade envelope (no clicks/pops)
   const playAudioBuffer = async (arrayBuffer: ArrayBuffer) => {
     try {
       const ctx = getAudioContext();
@@ -151,18 +174,33 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
 
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
       const source = ctx.createBufferSource();
+      const gainNode = ctx.createGain();
+      
       source.buffer = audioBuffer;
-      source.connect(analyserRef.current);
+      source.connect(gainNode);
+      gainNode.connect(analyserRef.current);
 
       const currentTime = ctx.currentTime;
       const startTime = Math.max(currentTime, nextStartTimeRef.current);
-      source.start(startTime);
-      nextStartTimeRef.current = startTime + audioBuffer.duration;
+      const duration = audioBuffer.duration;
 
-      activeSourcesRef.current.push(source);
+      // Smooth anti-pop envelope (4ms micro fade-in and fade-out)
+      gainNode.gain.setValueAtTime(0.001, startTime);
+      gainNode.gain.linearRampToValueAtTime(1.0, startTime + 0.004);
+      if (duration > 0.008) {
+        gainNode.gain.setValueAtTime(1.0, startTime + duration - 0.004);
+        gainNode.gain.linearRampToValueAtTime(0.001, startTime + duration);
+      }
+
+      source.start(startTime);
+      nextStartTimeRef.current = startTime + duration;
+
+      const item = { source, gain: gainNode };
+      activeSourcesRef.current.push(item);
+
       source.onended = () => {
-        activeSourcesRef.current = activeSourcesRef.current.filter(s => s !== source);
-        if (activeSourcesRef.current.length === 0 && currentTime >= nextStartTimeRef.current) {
+        activeSourcesRef.current = activeSourcesRef.current.filter(i => i.source !== source);
+        if (activeSourcesRef.current.length === 0 && ctx.currentTime >= nextStartTimeRef.current) {
           setHalState('idle');
           setAudioLevel(0);
         }
@@ -173,8 +211,14 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
   };
 
   const stopAllAudio = useCallback(() => {
-    activeSourcesRef.current.forEach(source => {
-      try { source.stop(); } catch {}
+    activeSourcesRef.current.forEach(({ source, gain }) => {
+      try {
+        if (audioCtxRef.current) {
+          gain.gain.setValueAtTime(gain.gain.value, audioCtxRef.current.currentTime);
+          gain.gain.linearRampToValueAtTime(0.001, audioCtxRef.current.currentTime + 0.02);
+        }
+        source.stop(audioCtxRef.current ? audioCtxRef.current.currentTime + 0.02 : 0);
+      } catch {}
     });
     activeSourcesRef.current = [];
     if (audioCtxRef.current) {
@@ -210,7 +254,7 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
     ]);
     setCurrentLlmText('');
 
-    // Ensure audio context is unlocked
+    // Ensure audio context is ready
     getAudioContext();
 
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {

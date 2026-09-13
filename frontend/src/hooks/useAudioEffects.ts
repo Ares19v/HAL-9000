@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Web Audio API procedural sound synthesizer for Discovery One.
- * - Deep spaceship environmental air ventilation hum (40-120Hz)
+ * Web Audio API procedural atmospheric sound engine for Discovery One.
+ * - Deep spaceship environmental air ventilation hum (40-140Hz)
+ * - 5.2 RPM Centrifuge Carousel LFO modulation (0.0867 Hz rotational cycle)
  * - Relay switch / CRT toggle blip sound
  */
 export function useAudioEffects(enabled: boolean) {
@@ -12,8 +13,8 @@ export function useAudioEffects(enabled: boolean) {
 
   useEffect(() => {
     if (!enabled) {
-      if (humGainRef.current) {
-        humGainRef.current.gain.setTargetAtTime(0, audioCtxRef.current?.currentTime || 0, 0.2);
+      if (humGainRef.current && audioCtxRef.current) {
+        humGainRef.current.gain.setTargetAtTime(0.0001, audioCtxRef.current.currentTime, 0.25);
       }
       return;
     }
@@ -30,24 +31,35 @@ export function useAudioEffects(enabled: boolean) {
         ctx.resume();
       }
 
-      // Create low hum
+      // Master ambient gain with smooth fade-in
       const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.04, ctx.currentTime);
+      masterGain.gain.setValueAtTime(0.001, ctx.currentTime);
+      masterGain.gain.exponentialRampToValueAtTime(0.045, ctx.currentTime + 0.6);
       masterGain.connect(ctx.destination);
       humGainRef.current = masterGain;
 
-      // Sub-bass oscillator (60Hz cabin electrical hum)
-      const osc60 = ctx.createOscillator();
-      osc60.type = 'sine';
-      osc60.frequency.setValueAtTime(58, ctx.currentTime);
+      // 1. Primary sub-bass oscillator (58Hz cabin electrical turbine)
+      const osc58 = ctx.createOscillator();
+      osc58.type = 'sine';
+      osc58.frequency.setValueAtTime(58, ctx.currentTime);
 
       const oscGain = ctx.createGain();
-      oscGain.gain.setValueAtTime(0.5, ctx.currentTime);
-      osc60.connect(oscGain);
+      oscGain.gain.setValueAtTime(0.4, ctx.currentTime);
+      osc58.connect(oscGain);
       oscGain.connect(masterGain);
-      osc60.start();
+      osc58.start();
 
-      // Atmospheric white/pink noise for air circulation
+      // 2. Secondary subtle 116Hz 2nd harmonic (generator resonance)
+      const osc116 = ctx.createOscillator();
+      osc116.type = 'sine';
+      osc116.frequency.setValueAtTime(116.4, ctx.currentTime); // Slight 0.4Hz chorus beat
+      const osc116Gain = ctx.createGain();
+      osc116Gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      osc116.connect(osc116Gain);
+      osc116Gain.connect(masterGain);
+      osc116.start();
+
+      // 3. Pink noise buffer for life support air duct circulation
       const bufferSize = ctx.sampleRate * 2;
       const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = noiseBuffer.getChannelData(0);
@@ -60,7 +72,7 @@ export function useAudioEffects(enabled: boolean) {
         b3 = 0.86650 * b3 + white * 0.3104856;
         b4 = 0.55000 * b4 + white * 0.5329522;
         b5 = -0.7616 * b5 - white * 0.0168980;
-        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+        output[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.09;
         b6 = white * 0.115926;
       }
 
@@ -68,19 +80,29 @@ export function useAudioEffects(enabled: boolean) {
       whiteNoise.buffer = noiseBuffer;
       whiteNoise.loop = true;
 
-      // Low pass filter at 140Hz for muffled ventilation sound
+      // Filter with LFO modulation
       const lowpass = ctx.createBiquadFilter();
       lowpass.type = 'lowpass';
-      lowpass.frequency.setValueAtTime(140, ctx.currentTime);
+      lowpass.frequency.setValueAtTime(130, ctx.currentTime);
+      lowpass.Q.setValueAtTime(1.2, ctx.currentTime);
+
+      // Centrifuge rotation LFO: 5.2 RPM = 5.2 / 60 = 0.0867 Hz
+      const lfoCentrifuge = ctx.createOscillator();
+      lfoCentrifuge.frequency.setValueAtTime(0.0867, ctx.currentTime);
+      const lfoGain = ctx.createGain();
+      lfoGain.gain.setValueAtTime(20, ctx.currentTime); // Swings cutoff by +/- 20 Hz
+      lfoCentrifuge.connect(lfoGain);
+      lfoGain.connect(lowpass.frequency);
+      lfoCentrifuge.start();
 
       whiteNoise.connect(lowpass);
       lowpass.connect(masterGain);
       whiteNoise.start();
 
-      humNodesRef.current = [osc60, whiteNoise];
+      humNodesRef.current = [osc58, osc116, whiteNoise, lfoCentrifuge];
 
     } catch (e) {
-      console.warn("Could not start ambient audio:", e);
+      console.warn("Could not initialize procedural acoustic engine:", e);
     }
 
     return () => {
@@ -101,17 +123,17 @@ export function useAudioEffects(enabled: boolean) {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.04);
+      osc.frequency.setValueAtTime(920, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(460, ctx.currentTime + 0.035);
 
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.05, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
 
       osc.connect(gain);
       gain.connect(ctx.destination);
 
       osc.start();
-      osc.stop(ctx.currentTime + 0.04);
+      osc.stop(ctx.currentTime + 0.035);
     } catch {}
   };
 
