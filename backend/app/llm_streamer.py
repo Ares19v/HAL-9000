@@ -9,6 +9,7 @@ Supports:
 import asyncio
 import json
 import logging
+import re
 from typing import AsyncGenerator, List, Dict, Any, Optional
 import httpx
 
