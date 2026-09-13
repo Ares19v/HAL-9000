@@ -16,7 +16,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   groqKey: '',
   openaiKey: '',
   geminiKey: '',
-  voice: 'en-US-GuyNeural', // Authentic Douglas Rain warm baritone
+  voice: 'en-US-ChristopherNeural', // Measured, authentic Douglas Rain mid-Atlantic cadence
   ambientHum: false, // Default off until user engages to respect browser audio autoplay policy
   vadEnabled: false,
   soundEffects: true,
@@ -27,7 +27,14 @@ export function App() {
   const [settings, setSettings] = useState<AppSettings>(() => {
     try {
       const saved = localStorage.getItem('hal9000_settings');
-      return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (!parsed.voice || parsed.voice === 'en-US-GuyNeural') {
+          parsed.voice = 'en-US-ChristopherNeural';
+        }
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+      return DEFAULT_SETTINGS;
     } catch {
       return DEFAULT_SETTINGS;
     }

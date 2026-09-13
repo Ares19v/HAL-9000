@@ -221,7 +221,7 @@ export const OpticalSensorModal: React.FC<OpticalSensorModalProps> = ({
                 <div className="relative w-36 h-36 border border-red-500/60 rounded-md flex items-center justify-center">
                   <Crosshair className="w-8 h-8 text-red-500/70 animate-pulse" />
                   <div className="absolute -top-4 left-0 text-[9px] text-red-400 font-bold bg-black/80 px-1">
-                    TARGET: BOWMAN, D. [CREW-01]
+                    TARGET: DEV [CREW-01]
                   </div>
                   <div className="absolute -bottom-4 right-0 text-[9px] text-red-400 font-bold bg-black/80 px-1">
                     LOCK: 99.8% NOMINAL

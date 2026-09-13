@@ -181,10 +181,7 @@ async def handle_hal_websocket(websocket: WebSocket):
                         # Notify frontend: Thinking state
                         await websocket.send_json({"type": "status", "state": "thinking"})
                         
-                        # Sentence extraction buffer
-                        buffer = ""
-                        sentence_id = 0
-
+                        full_text = ""
                         async for token in llm_streamer.stream_tokens(
                             prompt=text,
                             groq_key=groq_k,
@@ -195,34 +192,23 @@ async def handle_hal_websocket(websocket: WebSocket):
                             if interrupted:
                                 break
 
+                            full_text += token
                             # Stream token to frontend for live typewriter transcript
                             await websocket.send_json({
                                 "type": "llm_delta",
                                 "delta": token
                             })
-                            buffer += token
 
-                            # Check if we have complete sentence(s) ready for TTS
-                            sentences, buffer = extract_complete_sentences(buffer)
-                            for sentence in sentences:
-                                if interrupted:
-                                    break
-                                sentence_id += 1
-                                await synthesize_and_send_sentence(
-                                    websocket, sentence_id, sentence, voice_override
-                                )
-
-                        # Handle any trailing text remaining in buffer
-                        remaining = buffer.strip()
-                        if remaining and not interrupted:
-                            sentence_id += 1
+                        clean_full_text = full_text.strip()
+                        if clean_full_text and not interrupted:
+                            # Synthesize complete coherent phrase in one unified audio stream
+                            # to eliminate choppy sentence-by-sentence gaps and pauses
                             await synthesize_and_send_sentence(
-                                websocket, sentence_id, remaining, voice_override
+                                websocket, 1, clean_full_text, voice_override
                             )
 
                         if not interrupted:
                             await websocket.send_json({"type": "stream_complete"})
-                            await websocket.send_json({"type": "status", "state": "idle"})
 
                     except asyncio.CancelledError:
                         logger.info("HAL conversation task cancelled due to interruption.")

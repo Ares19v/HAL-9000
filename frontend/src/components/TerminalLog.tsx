@@ -78,7 +78,7 @@ export const TerminalLog: React.FC<TerminalLogProps> = ({
               <span className={`font-bold tracking-wider ${
                 msg.role === 'user' ? 'text-cyan-400 phosphor-cyan' : 'text-red-400 phosphor-red'
               }`}>
-                {msg.role === 'user' ? '► DR. DAVID BOWMAN' : '■ HAL 9000'}
+                {msg.role === 'user' ? '► COMMANDER DEV' : '■ HAL 9000'}
               </span>
               <span className="text-zinc-600 font-mono">[{msg.timestamp}]</span>
             </div>

@@ -69,7 +69,7 @@ class DiscoveryTelemetry:
                 {"name": "KIMBALL, J.", "status": "STASIS", "heart_bpm": 4, "temp_c": -12.2}
             ],
             "active_crew": [
-                {"name": "BOWMAN, D.", "role": "COMMANDER", "loc": "COCKPIT"},
+                {"name": "DEV", "role": "COMMANDER", "loc": "COCKPIT"},
                 {"name": "POOLE, F.", "role": "DEPUTY", "loc": "CENTRIFUGE"}
             ],
             "pod_bays": self.pod_bays,

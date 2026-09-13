@@ -38,27 +38,28 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
       analyser.fftSize = 128;
       analyser.smoothingTimeConstant = 0.75;
 
-      // Douglas Rain Studio Vocal DSP Chain
+      // Douglas Rain Studio Vocal DSP Chain: High-intelligibility broadcast booth
       const lowShelf = ctx.createBiquadFilter();
       lowShelf.type = 'lowshelf';
-      lowShelf.frequency.value = 160;
-      lowShelf.gain.value = 3.5; // Intimate proximity baritone boost
+      lowShelf.frequency.value = 180;
+      lowShelf.gain.value = 1.0; // Subtle low-end warmth (no muddy boom)
 
-      const highShelf = ctx.createBiquadFilter();
-      highShelf.type = 'highshelf';
-      highShelf.frequency.value = 6200;
-      highShelf.gain.value = -2.2; // 1968 cinema optical tape warmth
+      const midPresence = ctx.createBiquadFilter();
+      midPresence.type = 'peaking';
+      midPresence.frequency.value = 3200;
+      midPresence.gain.value = 1.8; // Articulation & clarity in speech frequencies
+      midPresence.Q.value = 0.9;
 
       const comp = ctx.createDynamicsCompressor();
-      comp.threshold.value = -16;
-      comp.knee.value = 8;
-      comp.ratio.value = 3.5;
-      comp.attack.value = 0.005;
-      comp.release.value = 0.08;
+      comp.threshold.value = -18;
+      comp.knee.value = 6;
+      comp.ratio.value = 3.0;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.05;
 
       analyser.connect(lowShelf);
-      lowShelf.connect(highShelf);
-      highShelf.connect(comp);
+      lowShelf.connect(midPresence);
+      midPresence.connect(comp);
       comp.connect(ctx.destination);
 
       analyserRef.current = analyser;
