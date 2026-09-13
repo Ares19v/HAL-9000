@@ -86,7 +86,7 @@ class LLMStreamer:
         # 2. Try Groq (Fastest LLM inference engine - Low latency streaming)
         if active_groq:
             client = self._get_client()
-            for model_id in ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"]:
+            for model_id in ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "qwen/qwen3.6-27b"]:
                 try:
                     headers = {
                         "Authorization": f"Bearer {active_groq}",

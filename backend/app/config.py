@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     MISSION_CLOCK_START: int = 15724800          # Mission Elapsed Time in seconds
 
     class Config:
-        env_file = ".env"
+        env_file = [".env", "backend/.env", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env")]
         extra = "allow"
 
 settings = Settings()

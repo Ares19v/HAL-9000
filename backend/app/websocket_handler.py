@@ -62,13 +62,13 @@ def extract_speech_chunks(buffer: str, is_first: bool = False) -> Tuple[List[str
             if found_early_sent:
                 continue
 
-            # 2. Early clause break [,;:—] for 3-7 words (e.g. 'I am completely operational,')
+            # 2. Early clause break [,;:—] for 2-7 words (e.g. 'Good evening,' or 'Yes, Dev,')
             clause_matches = list(re.finditer(r'([,;:—]+)(?:\s+|$)', text))
             found_early_clause = False
             for cm in clause_matches:
                 cand = text[:cm.end()].strip()
                 words = cand.split()
-                if 3 <= len(words) <= 7:
+                if 2 <= len(words) <= 7:
                     # Check if next word is a vocative name followed by punctuation (e.g. 'Good evening,' + 'Dave.')
                     next_text = text[cm.end():].strip()
                     next_words = next_text.split()
@@ -92,11 +92,11 @@ def extract_speech_chunks(buffer: str, is_first: bool = False) -> Tuple[List[str
             if found_early_clause:
                 continue
 
-            # 3. If no punctuation after 6 words, break early at word 5 to avoid stalling speech
+            # 3. If no punctuation after 4 words, break early at word 3-4 to start speaking immediately
             words = text.split()
-            if len(words) >= 6:
+            if len(words) >= 4:
                 split_idx = 0
-                for _ in range(5):
+                for _ in range(min(4, len(words))):
                     nxt = text.find(' ', split_idx)
                     if nxt == -1: break
                     split_idx = nxt + 1

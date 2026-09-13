@@ -181,16 +181,19 @@ export function useHalSocket({ settings }: UseHalSocketProps) {
             // Complete sentence audio assembled, decode and schedule with crossfade
             const chunks = pendingSentenceAudioRef.current.get(data.sentence_id);
             if (chunks && chunks.length > 0) {
-              let totalLength = 0;
-              chunks.forEach(c => totalLength += c.byteLength);
-              const combined = new Uint8Array(totalLength);
-              let offset = 0;
-              chunks.forEach(c => {
-                combined.set(c, offset);
-                offset += c.byteLength;
-              });
-
-              playAudioBuffer(combined.buffer);
+              if (chunks.length === 1) {
+                playAudioBuffer(chunks[0].buffer as ArrayBuffer);
+              } else {
+                let totalLength = 0;
+                chunks.forEach(c => totalLength += c.byteLength);
+                const combined = new Uint8Array(totalLength);
+                let offset = 0;
+                chunks.forEach(c => {
+                  combined.set(c, offset);
+                  offset += c.byteLength;
+                });
+                playAudioBuffer(combined.buffer);
+              }
             }
             pendingSentenceAudioRef.current.delete(data.sentence_id);
           } else if (data.type === 'stream_complete') {

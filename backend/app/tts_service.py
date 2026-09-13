@@ -145,7 +145,8 @@ class TTSService:
                 logger.error(f"ElevenLabs streaming exception: {e}, falling back.")
 
         # 3. Kokoro-82M ONNX (Local StyleTTS2, High-speed, Human Prosody)
-        if provider == "kokoro" or voice_override in ["bm_george", "bm_daniel", "am_michael", "am_adam", "kokoro", "hal9000"]:
+        is_edge_voice = bool(voice_override and voice_override.startswith("en-"))
+        if not is_edge_voice and (provider == "kokoro" or voice_override in ["bm_george", "bm_daniel", "am_michael", "am_adam", "kokoro", "hal9000"]):
             kokoro = get_kokoro()
             if kokoro is not None:
                 try:
@@ -176,11 +177,8 @@ class TTSService:
                     sf.write(wav_io, samples, sample_rate, format="WAV", subtype="PCM_16")
                     wav_bytes = wav_io.getvalue()
 
-                    # Stream in 16KB packets for immediate Web Audio intake
-                    chunk_size = 16384
-                    for i in range(0, len(wav_bytes), chunk_size):
-                        yield wav_bytes[i:i + chunk_size]
-                        await asyncio.sleep(0.001)
+                    # Yield complete audio buffer in one shot for instant zero-latency client intake
+                    yield wav_bytes
                     return
                 except Exception as e:
                     logger.error(f"Kokoro synthesis error: {e}, falling back to Edge TTS.")
